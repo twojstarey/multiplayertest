@@ -1558,15 +1558,16 @@ function drawG(){
           drawGhost(np);
       }
   }
-  const firebaseConfig = {
-    apiKey: "AIzaSyD5VJH7JTzWjq_j_ikpH2PffsptvuYJm9s",
-    authDomain: "gd-editor-multiplayer.firebaseapp.com",
-    projectId: "gd-editor-multiplayer",
-    storageBucket: "gd-editor-multiplayer.firebasestorage.app",
-    messagingSenderId: "152449090977",
-    appId: "1:152449090977:web:dde2a5b4a3ae4da75d77e0",
-    measurementId: "G-S8HFGVK5Z1"
-  };
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD5VJH7JTzWjq_j_ikpH2PffsptvuYJm9s",
+  authDomain: "gd-editor-multiplayer.firebaseapp.com",
+  projectId: "gd-editor-multiplayer",
+  storageBucket: "gd-editor-multiplayer.firebasestorage.app",
+  messagingSenderId: "152449090977",
+  appId: "1:152449090977:web:dde2a5b4a3ae4da75d77e0",
+  measurementId: "G-S8HFGVK5Z1"
+};
 
   if (!dead) {
       gCtx2.save(); gCtx2.translate(px,py); gCtx2.rotate(player.rot*Math.PI/180);
