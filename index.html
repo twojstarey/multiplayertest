@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geometry Dash Editor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;font-family:'Arial Black',Arial,sans-serif;color:#fff;overflow:hidden;user-select:none;}
+#menu{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;}
+#menu-bg{position:absolute;inset:0;width:100%;height:100%;}
+#menu .ui{position:relative;z-index:2;text-align:center;}
+#menu h1{font-size:60px;color:#FFD700;text-shadow:0 0 28px #FFD700,4px 4px 0 #8B4513;letter-spacing:4px;margin-bottom:6px;}
+#menu h2{font-size:24px;color:#7DF;margin-bottom:44px;}
+.mbtn{display:block;width:290px;padding:13px;margin:9px auto;font-size:19px;font-weight:900;border:none;border-radius:12px;cursor:pointer;transition:transform .12s;letter-spacing:2px;text-transform:uppercase;}
+.mbtn:hover{transform:scale(1.07);}
+.mg{background:linear-gradient(135deg,#2ECC40,#27AE60);color:#fff;box-shadow:0 5px 0 #1a7a30;}
+.mb{background:linear-gradient(135deg,#3498DB,#2980B9);color:#fff;box-shadow:0 5px 0 #1a5a8a;}
+.mp{background:linear-gradient(135deg,#9B59B6,#8E44AD);color:#fff;box-shadow:0 5px 0 #6c3483;}
+#levels-screen, #multiplayer-setup {position:absolute;inset:0;display:none;flex-direction:column;align-items:center;z-index:100;}
+#lvl-bg, #mp-bg{position:absolute;inset:0;width:100%;height:100%;}
+#levels-screen .ui, #multiplayer-setup .ui{position:relative;z-index:2;width:660px;padding-top:26px;text-align:center;}
+#levels-screen h2, #multiplayer-setup h2{font-size:36px;color:#FFD700;text-align:center;margin-bottom:16px;text-shadow:3px 3px 0 #8B4513;}
+#multiplayer-setup .ui { width: 350px; }
+#multiplayer-setup label { display: block; margin: 15px 0 8px; color: #adf; }
+#multiplayer-setup input { width: 100%; padding: 12px; font-size: 18px; border-radius: 10px; border: 2px solid #3AF; background: #112; color: #fff; }
+#multiplayer-setup .mbtn { margin-top: 25px; }
+
+#levels-list{max-height:480px;overflow-y:auto;}
+.lv-card{background:rgba(0,0,60,.85);border:3px solid #3AF;border-radius:12px;padding:13px 16px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;}
+.lv-card:hover{background:rgba(0,50,150,.85);}
+.lv-name{font-size:19px;font-weight:900;}
+.lv-info{font-size:12px;color:#adf;margin-top:3px;}
+.lv-btns{display:flex;gap:7px;}
+.lb{padding:7px 13px;border:none;border-radius:8px;font-size:13px;font-weight:900;cursor:pointer;}
+.lp{background:#2ECC40;color:#fff;} .le{background:#3498DB;color:#fff;} .ld{background:#E74C3C;color:#fff;}
+.empty{text-align:center;color:#aaa;font-size:17px;padding:34px;}
+.back-btn{margin:13px auto 0;display:block;padding:9px 32px;font-size:15px;font-weight:900;background:rgba(0,0,0,.55);border:2px solid #fff;color:#fff;border-radius:10px;cursor:pointer;}
+
+/* EDITOR UI */
+#editor{position:absolute;inset:0;display:none;flex-direction:column;}
+#ed-bar{height:48px;background:#0e0e0e;border-bottom:2px solid #333;display:flex;align-items:center;gap:5px;padding:0 8px;flex-shrink:0;overflow-x:auto;}
+.tb{padding:5px 9px;border:2px solid #555;border-radius:6px;background:#1c1c1c;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.tb.on{border-color:#FFD700;background:#1e1200;color:#FFD700;}
+.sep{width:1px;height:28px;background:#444;margin:0 3px;flex-shrink:0;}
+#ed-name{background:#1c1c1c;border:2px solid #555;color:#fff;border-radius:6px;padding:3px 7px;font-size:12px;font-weight:700;width:130px;flex-shrink:0;}
+#ed-wrap{flex:1;position:relative;overflow:hidden;}
+#ed-c{position:absolute;top:0;left:0;cursor:crosshair;}
+#ed-panel{height:106px;background:#090909;border-top:2px solid #333;display:flex;align-items:center;padding:5px 7px;gap:5px;overflow-x:auto;flex-shrink:0;}
+.ob{width:76px;height:92px;border:3px solid #444;border-radius:8px;background:#111828;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;padding:3px;}
+.ob:hover{border-color:#FFD700;} .ob.on{border-color:#FFD700;background:#1e1400;}
+.ob img{max-width:52px;max-height:52px;object-fit:contain;pointer-events:none;}
+.ob span{font-size:9px;color:#999;margin-top:2px;text-align:center;line-height:1.2;}
+#hint{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.9);border-radius:8px;padding:6px 9px;font-size:10px;color:#8af;line-height:1.85;pointer-events:none;border:1px solid #334; text-align:right;}
+#sz-lbl{position:absolute;bottom:114px;right:6px;background:rgba(0,0,0,.78);border-radius:6px;padding:3px 8px;font-size:11px;color:#FFD700;pointer-events:none;}
+
+/* Trigger/Deco Menus */
+.editor-popup{position:absolute;right:15px;background:#1a2b4a;border:3px solid #3AF;border-radius:12px;padding:15px;display:none;flex-direction:column;gap:9px;z-index:20;}
+.editor-popup h3{color:#FFD700;text-align:center;margin-bottom:5px;font-size:16px;}
+.ep-close{position:absolute;top:8px;right:8px;background:#E74C3C;border:none;color:#fff;border-radius:6px;width:24px;height:24px;font-weight:bold;cursor:pointer;}
+.ep-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#fff;}
+.ep-row input[type="color"]{width:70px; height:24px; padding:0; border:1px solid #3AF; background: none;}
+.ep-row input[type="number"], .ep-row select{width:75px;background:#223;color:#fff;border:1px solid #3AF;border-radius:4px;padding:2px 4px;}
+
+#btn-edit-obj{top:65px;}
+#btn-edit-group{top:110px; background:#9B59B6; border-color:#8E44AD;}
+
+#trig-menu, #deco-menu, #gtrig-menu, #alpha-menu, #move-menu, #startpos-menu, #group-menu {
+  top:155px; width:220px;
+}
+
+#esc-ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:300;background:rgba(0,0,0,.75);}
+#esc-box{background:#0c0c28;border:3px solid #3AF;border-radius:18px;padding:26px 34px;min-width:300px;text-align:center;}
+#esc-box h2{font-size:24px;color:#FFD700;margin-bottom:16px;text-shadow:2px 2px 0 #8B4513;}
+.ep{display:block;width:100%;padding:10px;margin:6px 0;font-size:14px;font-weight:900;border:none;border-radius:10px;cursor:pointer;}
+.ep:hover{filter:brightness(1.15);}
+.epg{background:#2ECC40;color:#fff;} .epb{background:#3498DB;color:#fff;} .epp{background:#9B59B6;color:#fff;} .epo{background:#E67E22;color:#fff;} .epr{background:#E74C3C;color:#fff;}
+#bg-row{margin-top:13px;text-align:center;}
+#bg-row label{font-size:12px;color:#adf;display:block;margin-bottom:5px;}
+#bg-color-inp{width:100%;height:36px;border:none;border-radius:8px;cursor:pointer;}
+
+/* Music Row */
+#music-row{margin-top:13px; text-align:center;}
+#music-row label{font-size:12px;color:#adf;display:block;margin-bottom:5px;}
+#music-select{
+  width:100%; padding:8px 12px; border:1px solid #3AF; border-radius:8px;
+  background:#223; color:#fff; font-size:14px; font-weight:700; cursor:pointer;
+  margin-bottom: 5px;
+}
+#music-select:focus{outline:none;border-color:#FFD700;}
+#browse-music-btn {
+  display: block; width: 100%; padding: 8px 12px;
+  background: #2980B9; color: #fff; font-weight: 700;
+  border: none; border-radius: 8px; cursor: pointer;
+}
+#browse-music-btn:hover { filter: brightness(1.15); }
+.music-disclaimer { font-size: 10px; color: #aaa; margin-top: 8px; line-height: 1.3; }
+
+/* GAME UI */
+#game{position:absolute;inset:0;display:none;}
+#game-c{width:100%;height:100%;display:block;}
+#game-ui{position:absolute;top:0;left:0;right:0;height:60px;pointer-events:none;}
+#g-back{position:absolute;top:8px;left:7px;padding:6px 12px;background:rgba(0,0,0,.68);border:2px solid #fff;color:#fff;font-size:12px;font-weight:900;border-radius:8px;cursor:pointer;z-index:10;pointer-events:all;}
+#g-title{position:absolute;top:12px;left:75px;font-size:17px;font-weight:900;text-shadow:2px 2px 0 #000;white-space:nowrap;}
+
+#prog-wrap{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:168px;height:9px;}
+#prog-groove{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+#prog-bar{position:absolute;inset:0;width:0%;overflow:hidden;pointer-events:none;}
+#prog-bar-img{width:168px;height:9px;max-width:none;display:block;object-fit:fill;}
+#g-pct{position:absolute;top:32px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:900;text-shadow:1px 1px 0 #000;}
+
+#attempts-display{
+  position:absolute; top:12px; right:7px; font-size:17px; font-weight:900;
+  text-shadow:2px 2px 0 #000; color:#fff; text-align:right;
+  font-family:'Arial Black', Impact, sans-serif;
+}
+
+#win-screen{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:50;cursor:pointer;}
+#win-screen h2{font-size:54px;color:#FFD700;text-shadow:4px 4px 0 #8B4513;}
+#win-screen p{font-size:20px;color:#fff;margin-top:7px;}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <canvas id="menu-bg"></canvas>
+  <div class="ui">
+    <h1>GEOMETRY DASH</h1><h2>EDITOR</h2>
+    <button class="mbtn mg" onclick="showLevels()">▶ MY LEVELS</button>
+    <button class="mbtn mb" onclick="newLevel()">✏ CREATE LEVEL</button>
+    <button class="mbtn mp" onclick="showMultiplayerSetup()">👥 MULTIPLAYER</button>
+  </div>
+</div>
+
+<div id="multiplayer-setup">
+    <canvas id="mp-bg"></canvas>
+    <div class="ui">
+        <h2>MULTIPLAYER</h2>
+        <label for="username-input">Enter Your Name</label>
+        <input type="text" id="username-input" value="Player" maxlength="15">
+        <button class="mbtn mp" onclick="joinMultiplayer()">JOIN GAME</button>
+        <button class="back-btn" onclick="showMenu()">← BACK</button>
+    </div>
+</div>
+
+<div id="levels-screen">
+  <canvas id="lvl-bg"></canvas>
+  <div class="ui">
+    <h2 id="levels-title">MY LEVELS</h2>
+    <div id="levels-list"></div>
+    <button class="back-btn" onclick="showMenu()">← BACK</button>
+  </div>
+</div>
+
+<div id="editor">
+  <div id="ed-bar">
+    <span style="font-size:10px;color:#777;flex-shrink:0">Name:</span>
+    <input id="ed-name" type="text" value="My Level" maxlength="30">
+    <div class="sep"></div>
+    <button class="tb on" id="tool-place"  onclick="setTool('place')">✚ PLACE</button>
+    <button class="tb"    id="tool-select" onclick="setTool('select')">↖ SELECT</button>
+    <button class="tb"    id="tool-size"   onclick="setTool('size')">⤡ SIZE</button>
+    <div class="sep"></div>
+    <button class="tb" onclick="rotSel(-15)">◁Q</button>
+    <button class="tb" onclick="rotSel(15)">E▷</button>
+    <div class="sep"></div>
+    <button class="tb" onclick="doUndo()" title="Ctrl+Z">↩ UNDO</button>
+    <button class="tb" onclick="doRedo()" title="Ctrl+Y">↪ REDO</button>
+    <div class="sep"></div>
+    <button class="tb" style="border-color:#2ECC40;color:#2ECC40" onclick="saveLevel()">💾 SAVE</button>
+    <button class="tb" style="border-color:#3AF;color:#3AF"       onclick="testLevel()">▶ TEST</button>
+    
+    <div id="hint">
+      LMB Drag (Place Tool) / Middle Mouse / WASD: Pan Camera<br>
+      Right Click: Delete Object | Ctrl+D: Duplicate | Shift+Drag: Box Select | Scroll: Zoom<br>
+      Q/E: Rotate Selected (group) | Shift+WASD: Fine move (4px) | M: Show Hitboxes
+    </div>
+    <div id="sz-lbl">Scale: 1.00×</div>
+  </div>
+  
+  <div id="ed-wrap"><canvas id="ed-c"></canvas></div>
+  <div id="ed-panel"></div>
+  
+  <button id="btn-edit-obj" class="editor-popup" onclick="openActiveMenu()">⚙ Edit Object</button>
+  <button id="btn-edit-group" class="editor-popup" onclick="openGroupMenu()">🧩 Edit Group</button>
+  
+  <div id="trig-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>BG Trigger</h3>
+    <div class="ep-row"><span>Color:</span> <input type="color" id="trig-col"></div>
+    <div class="ep-row"><span>Fade Time (s):</span> <input type="number" id="trig-fade" step="0.1" min="0"></div>
+    <div class="ep-row"><span>Opacity (0-1):</span> <input type="number" id="trig-opac" step="0.1" min="0" max="1"></div>
+    <div class="ep-row"><span>Touch Trigger:</span> <input type="checkbox" id="trig-touch"></div>
+  </div>
+  <div id="gtrig-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Ground Trigger</h3>
+    <div class="ep-row"><span>Color:</span> <input type="color" id="gtrig-col"></div>
+    <div class="ep-row"><span>Fade Time (s):</span> <input type="number" id="gtrig-fade" step="0.1" min="0"></div>
+    <div class="ep-row"><span>Touch Trigger:</span> <input type="checkbox" id="gtrig-touch"></div>
+  </div>
+  <div id="alpha-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Alpha Trigger</h3>
+    <div class="ep-row"><span>Target Group ID:</span> <input type="number" id="alpha-target" min="1" step="1"></div>
+    <div class="ep-row"><span>Fade Time (s):</span> <input type="number" id="alpha-fade" step="0.1" min="0"></div>
+    <div class="ep-row"><span>Opacity (0-1):</span> <input type="number" id="alpha-opac" step="0.1" min="0" max="1"></div>
+    <div class="ep-row"><span>Touch Trigger:</span> <input type="checkbox" id="alpha-touch"></div>
+  </div>
+  <div id="move-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Move Trigger</h3>
+    <div class="ep-row"><span>Target Group ID:</span> <input type="number" id="move-target" min="1" step="1"></div>
+    <div class="ep-row"><span>Move X (blocks):</span> <input type="number" id="move-x" step="1"></div>
+    <div class="ep-row"><span>Move Y (blocks):</span> <input type="number" id="move-y" step="1"></div>
+    <div class="ep-row"><span>Move Time (s):</span> <input type="number" id="move-time" step="0.1" min="0"></div>
+    <div class="ep-row"><span>Touch Trigger:</span> <input type="checkbox" id="move-touch"></div>
+  </div>
+  <div id="startpos-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Start Pos</h3>
+    <div class="ep-row"><span>Game Mode:</span>
+      <select id="start-mode">
+          <option value="cube">Cube</option>
+          <option value="ship">Ship</option>
+          <option value="wave">Wave</option>
+      </select>
+    </div>
+  </div>
+  <div id="deco-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Decoration Color</h3>
+    <div class="ep-row"><span>Color Tint:</span> <input type="color" id="deco-col"></div>
+  </div>
+  <div id="group-menu" class="editor-popup">
+    <button class="ep-close" onclick="closeActiveMenu()">X</button>
+    <h3>Object Group</h3>
+    <div class="ep-row"><span>Group ID (0 = none):</span> <input type="number" id="obj-group-id" min="0" step="1"></div>
+  </div>
+
+  <div id="esc-ov">
+    <div id="esc-box">
+      <h2>⚙ EDITOR MENU</h2>
+      <button class="ep epg"  onclick="escPlay()">▶ PLAY LEVEL</button>
+      <button class="ep epb"  onclick="escSave()">💾 SAVE LEVEL</button>
+      <button class="ep epp"  onclick="escSP()">▶ SAVE &amp; PLAY</button>
+      <button class="ep epo"  onclick="escSE()">💾 SAVE &amp; EXIT</button>
+      <button class="ep epr"  onclick="escExit()">← EXIT (no save)</button>
+      <div id="bg-row">
+        <label>Level Start Background Color</label>
+        <input id="bg-color-inp" type="color" value="#1a2a6c" oninput="setBgC(this.value)">
+      </div>
+      <div id="bg-row" style="margin-top:8px;">
+        <label>Level Start Ground Color</label>
+        <input id="ground-color-inp" type="color" value="#3a6020" oninput="setGroundC(this.value)">
+      </div>
+      <div id="music-row">
+        <label>Music</label>
+        <select id="music-select" onchange="setMusic(this.value)">
+          <option value="none">No Music</option>
+          <option value="track1">Track 1 (Placeholder)</option>
+          <option value="track2">Track 2 (Placeholder)</option>
+          <option value="track3">Track 3 (Placeholder)</option>
+        </select>
+        <button id="browse-music-btn">Browse MP3s</button>
+        <input type="file" id="local-music-input" accept="audio/mpeg" multiple style="display:none;">
+        <p class="music-disclaimer">Note: Local MP3s are temporary for this browser session.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="game">
+  <canvas id="game-c"></canvas>
+  <div id="game-ui">
+    <div id="g-title">Level</div>
+    <div id="prog-wrap">
+      <img id="prog-groove" src="https://media.discordapp.net/attachments/1324119314701488263/1489987993757552831/slidergroove_02.png?ex=69d26af4&is=69d11974&hm=6963d00d0833234afab6ca29badab315f91cae7f70509ec8bc004b1505775743&=&format=webp&quality=lossless&width=168&height=9">
+      <div id="prog-bar" style="width:0%">
+        <img id="prog-bar-img" src="https://cdn.discordapp.com/attachments/1324119314701488263/1489987994386436276/sliderBar2.png?ex=69d26af4&is=69d11974&hm=1b6a0edbefb74b52c7d805cfdce203a212d438ec9443e508e7ada27d01ff8296&">
+      </div>
+    </div>
+    <div id="g-pct">0%</div>
+    <div id="attempts-display">Attempts: 0</div>
+  </div>
+  <button id="g-back" onclick="exitGame()">← QUIT</button>
+  <div id="win-screen"><h2>🏆 COMPLETE!</h2><p>Click to continue</p></div>
+</div>
+
+<script>
+'use strict';
+const TILE=64, GROUND_Y=9*TILE;
+const CEIL_Y = -3*TILE; 
+const SHIP_TUNNEL_H = GROUND_Y - CEIL_Y; 
+const GROUND_TS=250;
+const PLAYER_SPD=650, GRAVITY=6000, JUMP_V=-1380;
+const SHIP_GRAV=2800, SHIP_THRUST=-3500, SHIP_MAXVY=1080;
+const BG_PAR=0.12;
+const BG_TS=1400;
+const tintCache = new Map();
+
+let gZoom = 1;
+let shipTransAnim = 0;   
+let shipTransDir = 1;    
+const TRANS_DUR = 0.55;  
+let prevGMode = 'cube';  
+let playTrail =[];
+let pWaveTrail =[]; 
+
+const SRC={
+  bg:'https://i.imgur.com/PsXJdC6.png',
+  cube:'https://i.imgur.com/LWmt7mD.png',
+  ship:'https://i.imgur.com/CLUsNln.png',
+  wave:'https://i.imgur.com/tvA1vnp.png',
+  ground:'https://i.imgur.com/HCFkqKg.png',
+  ground_trigger:'https://i.imgur.com/55QWy7m.png',
+  alpha_trigger:'https://i.imgur.com/gCZ5vqz.png',
+  move_trigger:'https://i.imgur.com/OAjbVEB.png',
+  start_pos:'https://i.imgur.com/FLnUP3c.png',
+  spike:'https://i.imgur.com/9DwKJb2.png',
+  jump_pad:'https://i.imgur.com/H7VvNeF.png',
+  block1:'https://i.imgur.com/W383yv2.png',
+  block2:'https://i.imgur.com/dyuaKyM.png',
+  block3:'https://i.imgur.com/Godi3T5.png',
+  block4:'https://i.imgur.com/vyCfzoT.png',
+  block5:'https://i.imgur.com/aJTJ0Ei.png',
+  half_block:'https://i.imgur.com/hqIpBij.png',
+  small_spk:'https://i.imgur.com/8XzbbU5.png',
+  black_spk:'https://i.imgur.com/XRjw8PX.png',
+  cube_port:'https://i.imgur.com/qVh7VIT.png',
+  ship_port:'https://i.imgur.com/zxT7Z80.png',
+  wave_port:'https://i.imgur.com/HJWopPf.png',
+  orb:'https://i.imgur.com/ysH0qCh.png',
+  deco1:'https://i.imgur.com/Mp27IWo.png',
+  deco2:'https://i.imgur.com/omTYQuo.png',
+  bg_trigger:'https://i.imgur.com/zsf7WEb.png',
+  shallow_slope:'https://i.imgur.com/Rwlqpu6.png',
+  saw:'https://i.imgur.com/eRhUsPU.png'
+};
+const IM={};
+for(const[k,v]of Object.entries(SRC)){const i=new Image();i.crossOrigin='anonymous';i.src=v;IM[k]=i;}
+function ok(i){return i&&i.complete&&i.naturalWidth>0;}
+
+function getTinted(img, color, pw, ph){
+  const key = `${img.src}|${color}|${pw}|${ph}`;
+  if(tintCache.has(key)) return tintCache.get(key);
+  const oc = document.createElement('canvas');
+  oc.width = pw; oc.height = ph;
+  const ox = oc.getContext('2d');
+  ox.drawImage(img, 0, 0, pw, ph);
+  ox.globalCompositeOperation = 'source-atop';
+  ox.globalAlpha = 0.85;
+  ox.fillStyle = color;
+  ox.fillRect(0, 0, pw, ph);
+  ox.globalAlpha = 1;
+  ox.globalCompositeOperation = 'source-over';
+  tintCache.set(key, oc);
+  if(tintCache.size > 200){ const first=tintCache.keys().next().value; tintCache.delete(first); }
+  return oc;
+}
+
+const TYPES=[
+  {id:'block1',   lbl:'Block 1',     img:'block1',   w:1,    h:1,   kind:'block', solid:true},
+  {id:'half_block',lbl:'Half\nBlock',img:'half_block',w:1,   h:0.5, kind:'block', solid:true},
+  {id:'block2',   lbl:'Block 2\nnoclip',img:'block2',w:1,    h:1,   kind:'block', solid:false},
+  {id:'block3',   lbl:'Block 3',     img:'block3',   w:1,    h:1,   kind:'block', solid:true},
+  {id:'block4',   lbl:'Block 4',     img:'block4',   w:1,    h:1,   kind:'block', solid:true},
+  {id:'block5',   lbl:'Block 5',     img:'block5',   w:1,    h:1,   kind:'block', solid:true},
+  {id:'spike',    lbl:'Spike',       img:'spike',    w:1,    h:1,   kind:'spike', solid:false},
+  {id:'small_spk',lbl:'Sm.Spike',    img:'small_spk',w:1,    h:0.5, kind:'spike', solid:false},
+  {id:'black_spk',lbl:'Black\nSpk',  img:'black_spk',w:1,    h:0.5, kind:'spike', solid:false},
+  {id:'deco1',    lbl:'Deco 1',      img:'deco1',    w:3.5,  h:1,   kind:'block', solid:false, isDeco:true},
+  {id:'deco2',    lbl:'Deco 2',      img:'deco2',    w:1,    h:2.5, kind:'block', solid:false, isDeco:true},
+  {id:'jump_pad', lbl:'Jump Pad',    img:'jump_pad', w:1.2,  h:0.2, kind:'pad',   solid:false},
+  {id:'orb',      lbl:'Orb',         img:'orb',      w:1,    h:1,   kind:'orb',   solid:false},
+  {id:'cube_port',lbl:'Cube\nPortal',img:'cube_port',w:1.4,  h:2.7, kind:'pcube', solid:false},
+  {id:'ship_port',lbl:'Ship\nPortal',img:'ship_port',w:1.4,  h:2.7, kind:'pship', solid:false},
+  {id:'wave_port',lbl:'Wave\nPortal',img:'wave_port',w:1.4,  h:2.7, kind:'pwave', solid:false},
+  {id:'start_pos',lbl:'Start\nPos',  img:'start_pos',w:1,    h:1,   kind:'start_pos',solid:false},
+  {id:'bg_trigger',lbl:'BG\nTrigger',img:'bg_trigger',w:1,   h:1,   kind:'trigger',solid:false},
+  {id:'ground_trigger',lbl:'Ground\nTrigger',img:'ground_trigger',w:1,h:1,kind:'trigger',solid:false},
+  {id:'alpha_trigger',lbl:'Alpha\nTrigger',img:'alpha_trigger',w:1,h:1,kind:'trigger',solid:false},
+  {id:'move_trigger',lbl:'Move\nTrigger',img:'move_trigger',w:1,h:1,kind:'trigger',solid:false},
+  {id:'shallow_slope',lbl:'Shallow\nSlope',img:'shallow_slope',w:1,h:1,kind:'slope',solid:true},
+  {id:'saw',      lbl:'Saw',         img:'saw',      w:2,    h:2,   kind:'saw',   solid:false},
+];
+function td(id){return TYPES.find(t=>t.id===id)||TYPES[0];}
+
+let audioPlayer = new Audio(); 
+audioPlayer.crossOrigin = 'anonymous'; 
+let loadedLocalMusicFiles = new Map(); 
+let currentMusic = 'none'; 
+let attempts = 0;
+
+let audioCtx = null, analyser = null, audioSrc = null, musicPulse = 1.0;
+function initAudio() {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 128;
+            audioSrc = audioCtx.createMediaElementSource(audioPlayer);
+            audioSrc.connect(analyser);
+            analyser.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch(e) { console.error("Audio API error:", e); }
+}
+
+function getLS(){
+  try{
+    const data = JSON.parse(localStorage.getItem('gd2')||'[]');
+    const music = localStorage.getItem('gd2_music') || 'none'; 
+    return {levels: data, music: music};
+  }catch{
+    return {levels:[], music: 'none'};
+  }
+}
+function setLS(a){
+  localStorage.setItem('gd2',JSON.stringify(a.levels));
+  localStorage.setItem('gd2_music', a.music);
+}
+function $(x){return document.getElementById(x);}
+function show(id,d='block'){$(id).style.display=d;}
+function hide(id){$(id).style.display='none';}
+function eh(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function hexToRgb(hex) {
+  let c = hex.substring(1);
+  if(c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+  let num = parseInt(c, 16);
+  return[num >> 16, (num >> 8) & 255, num & 255];
+}
+function rgbToHex(r, g, b) {
+  return "#" + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1);
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+let bgColor='#1a2a6c';
+function setBgC(v){bgColor=v;$('bg-color-inp').value=v;}
+
+let edGroundColor='#3a6020';
+function setGroundC(v){edGroundColor=v;$('ground-color-inp').value=v;}
+
+let gBgCol =[26,42,108], gBgTarget =[26,42,108], gBgFadeT = 0, gBgFadeDur = 0;
+let gBgOpac = 1, gBgTargetOpac = 1, gBgStartOpac = 1;
+// Ground color state (for ground trigger)
+let gGndCol = [58,96,32], gGndTarget = [58,96,32], gGndFadeT = 0, gGndFadeDur = 0, gGndStartCol =[58,96,32];
+// Move and Alpha states
+let gMove = {};
+let gAlpha = {};
+
+function handleLocalMusicInput(event) {
+    const files = event.target.files;
+    if (files.length === 0) return;
+
+    const select = $('music-select');
+    Array.from(select.options).forEach(option => {
+        if (option.dataset.local === 'true') {
+            URL.revokeObjectURL(option.value); 
+            select.remove(option.index);
+        }
+    });
+    loadedLocalMusicFiles.clear(); 
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type === 'audio/mpeg') { 
+            loadedLocalMusicFiles.set(file.name, file);
+            const option = document.createElement('option');
+            option.value = file.name; 
+            option.textContent = `Local: ${file.name}`;
+            option.dataset.local = 'true'; 
+            select.appendChild(option);
+        }
+    }
+    if (loadedLocalMusicFiles.size > 0) {
+        setMusic(loadedLocalMusicFiles.keys().next().value); 
+    } else {
+        setMusic('none');
+    }
+}
+
+function setMusic(trackId) {
+    currentMusic = trackId;
+    
+    const musicSelect = $('music-select');
+    if (musicSelect && musicSelect.value !== trackId) {
+        musicSelect.value = trackId;
+    }
+
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        if (audioPlayer.src && audioPlayer.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audioPlayer.src);
+        }
+    }
+
+    if (trackId === 'none') {
+        audioPlayer.src = '';
+    } else if (loadedLocalMusicFiles.has(trackId)) {
+        const file = loadedLocalMusicFiles.get(trackId);
+        const objectURL = URL.createObjectURL(file);
+        audioPlayer.src = objectURL;
+        audioPlayer.loop = true;
+    } else {
+        audioPlayer.src = ''; 
+    }
+
+    const {levels} = getLS(); 
+    setLS({levels: levels, music: currentMusic});
+}
+
+function drawBg(ctx,W,H,camX,camY, overrideColor=null, overrideOpac=1){
+  const col = overrideColor || bgColor;
+  ctx.fillStyle = col;
+  ctx.fillRect(0,0,W,H);
+
+  const b = IM.bg;
+  if(!ok(b)) return;
+
+  const imgW = W;
+  const imgH = W;
+  const imgY = H * 0.92 - imgH;
+  const driftX = (-camX * BG_PAR) % imgW;
+
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = overrideOpac;
+  ctx.drawImage(b, driftX - imgW, imgY, imgW, imgH);
+  ctx.drawImage(b, driftX,        imgY, imgW, imgH);
+  ctx.drawImage(b, driftX + imgW, imgY, imgW, imgH);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+}
+
+let menuScroll=0;
+function menuBgLoop(cid,activeid){
+  const c=$(cid); if(!c) return;
+  c.width=c.offsetWidth||innerWidth; c.height=c.offsetHeight||innerHeight;
+  const ctx=c.getContext('2d');
+  menuScroll+=0.35;
+  drawBg(ctx,c.width,c.height,menuScroll,0); 
+  if($(activeid).style.display!=='none') requestAnimationFrame(()=>menuBgLoop(cid,activeid));
+}
+
+function showMenu(){
+  hide('multiplayer-setup');
+  show('menu','flex');hide('levels-screen');hide('editor');hide('game');
+  stopGame();edRun=false;closeEsc(); closeActiveMenu(); isMultiplayer = false;
+  requestAnimationFrame(()=>menuBgLoop('menu-bg','menu'));
+}
+function showLevels(){
+  hide('menu');hide('multiplayer-setup');
+  show('levels-screen','flex');renderList();
+  $('levels-title').textContent = isMultiplayer ? "MULTIPLAYER LEVELS" : "MY LEVELS";
+  requestAnimationFrame(()=>menuBgLoop('lvl-bg','levels-screen'));
+}
+function renderList(){
+  const lvs=getLS().levels,el=$('levels-list');
+  if(!lvs.length){el.innerHTML='<div class="empty">No levels yet!</div>';return;}
+  let buttons = isMultiplayer ? `<button class="lb lp" onclick="playLevel(${'${i}'})">▶</button>` : `<button class="lb lp" onclick="playLevel(${'${i}'})">▶</button>
+        <button class="lb le" onclick="editLevel(${'${i}'})">✏</button>
+        <button class="lb ld" onclick="delLevel(${'${i}'})">✖</button>`;
+  el.innerHTML=lvs.map((lv,i)=>`
+    <div class="lv-card">
+      <div><div class="lv-name">${eh(lv.name)}</div><div class="lv-info">${lv.objs.length} objs</div></div>
+      <div class="lv-btns">
+        ${buttons.replace(/\$\{i\}/g, i)}
+      </div>
+    </div>`).join('');
+}
+function delLevel(i){if(!confirm('Delete?'))return;const {levels, music}=getLS();levels.splice(i,1);setLS({levels: levels, music: music});renderList();}
+
+// ── MULTIPLAYER ──
+let isMultiplayer = false;
+let myPlayerId = 'p' + Date.now() + Math.random().toString(36).substring(2, 9);
+let myUsername = 'Player';
+let otherPlayers = new Map();
+let otherDeathFX = [];
+let lastBroadcast = 0;
+const channel = new BroadcastChannel('gd_multiplayer_channel');
+
+channel.onmessage = e => {
+    const data = e.data;
+    if (data.id === myPlayerId) return; // Ignore our own messages
+
+    switch(data.type) {
+        case 'playerUpdate':
+            data.lastSeen = Date.now();
+            otherPlayers.set(data.id, data);
+            break;
+        case 'playerLeave':
+            otherPlayers.delete(data.id);
+            break;
+        case 'playerDeath':
+            otherDeathFX.push({ x: data.x, y: data.y, wave: 0, particles: [] });
+            const fx = otherDeathFX[otherDeathFX.length - 1];
+            for (let i = 0; i < 16; i++) {
+                fx.particles.push({
+                    x: fx.x, y: fx.y,
+                    vx: (Math.random() - 0.5) * 600, vy: (Math.random() - 1.2) * 800,
+                    rot: Math.random() * 360, rotV: (Math.random() - 0.5) * 800,
+                    size: TILE / 4 * (0.6 + Math.random() * 0.5)
+                });
+            }
+            break;
+    }
+};
+
+function showMultiplayerSetup() {
+    hide('menu'); show('multiplayer-setup', 'flex');
+    requestAnimationFrame(()=>menuBgLoop('mp-bg', 'multiplayer-setup'));
+}
+
+function joinMultiplayer() {
+    myUsername = $('username-input').value.trim() || 'Player';
+    isMultiplayer = true;
+    showLevels();
+}
+
+// ── EDITOR STATE ──
+let edObjs=[],edIdx=-1,edTool='place',selType=TYPES[0];
+let selObjs=[];
+let camX=0,camY=0,camZoom=1;
+let lmbDown=false,lmbDrag=false,lmbSX=0,lmbSY=0,lmbShift=false,lmbOnCanvas=false;
+let isRmbDown=false, isMmbDown=false;
+let objDrag=false,objDX=[],objDY=[];
+let sboxX=0,sboxY=0,sboxW=0,sboxH=0;
+let szBase=null,szOrig=[];
+let selScale=1,showHB=false,edRun=false,edListened=false,escOp=false;
+
+// ── UNDO / REDO ──
+let undoStack=[], redoStack=[];
+function pushUndo(){
+  undoStack.push(JSON.stringify(edObjs));
+  if(undoStack.length>80) undoStack.shift();
+  redoStack=[];
+}
+function doUndo(){
+  if(!undoStack.length) return;
+  redoStack.push(JSON.stringify(edObjs));
+  edObjs=JSON.parse(undoStack.pop());
+  selObjs=[];
+}
+function doRedo(){
+  if(!redoStack.length) return;
+  undoStack.push(JSON.stringify(edObjs));
+  edObjs=JSON.parse(redoStack.pop());
+  selObjs=[];
+}
+
+function newLevel(){
+  edObjs=[];edIdx=-1;$('ed-name').value='My Level';
+  bgColor='#1a2a6c';$('bg-color-inp').value=bgColor;
+  edGroundColor='#3a6020';$('ground-color-inp').value=edGroundColor;
+  openEditor();
+  attempts = 0; 
+}
+function editLevel(i){
+  const {levels} = getLS();
+  const lv=levels[i];edObjs=lv.objs.map(o=>({...o}));edIdx=i;
+  bgColor=lv.bg||'#1a2a6c';$('bg-color-inp').value=bgColor;
+  edGroundColor=lv.groundColor||'#3a6020';$('ground-color-inp').value=edGroundColor;
+  $('ed-name').value=lv.name;hide('levels-screen');openEditor();
+  attempts = 0; 
+}
+function openEditor(){
+  hide('menu');hide('levels-screen');show('editor','flex');hide('game');
+  stopGame(); 
+  camX=200;camY=GROUND_Y-320;camZoom=1;
+  selObjs=[];lmbDown=false;lmbDrag=false;lmbOnCanvas=false;isRmbDown=false;isMmbDown=false;objDrag=false;
+  selScale=1;szBase=null;
+  undoStack=[]; redoStack=[];
+  setTool('place');buildPanel();initEd();
+  edRun=true;requestAnimationFrame(edLoop);
+
+  const {music} = getLS();
+  currentMusic = music;
+  const musicSelect = $('music-select');
+  if (musicSelect) {
+    musicSelect.value = currentMusic;
+    setMusic(currentMusic); 
+  }
+}
+function buildPanel(){
+  const p=$('ed-panel');
+  p.innerHTML=TYPES.map((t,i)=>`
+    <div class="ob ${i===0?'on':''}" id="ob-${t.id}" onclick="pickType('${t.id}')">
+      <img src="${SRC[t.img]}" alt=""><span>${t.lbl.replace(/\n/g,'<br>')}</span>
+    </div>`).join('');
+}
+function pickType(id){
+  selType=TYPES.find(t=>t.id===id);
+  document.querySelectorAll('.ob').forEach(b=>b.classList.remove('on'));
+  $('ob-'+id).classList.add('on');setTool('place');
+}
+function setTool(t){
+  edTool=t;['place','select','size'].forEach(n=>{const e=$('tool-'+n);if(e)e.classList.toggle('on',n===t);});
+  updSzLbl();
+}
+function updSzLbl(){
+  const sc=selObjs.length?(selObjs[0].scale||1):selScale;
+  $('sz-lbl').textContent='Scale: '+sc.toFixed(2)+'×';
+}
+function openEsc(){escOp=true;show('esc-ov','flex');}
+function closeEsc(){escOp=false;hide('esc-ov');}
+function escPlay(){closeEsc();doTest();}
+function escSave(){
+  const {levels} = getLS();
+  saveLevel();
+  setLS({levels: levels, music: currentMusic}); 
+  closeEsc();
+}
+function escSP(){
+  const {levels} = getLS();
+  saveLevel();
+  setLS({levels: levels, music: currentMusic});
+  closeEsc();doTest();
+}
+function escSE(){
+  const {levels} = getLS();
+  saveLevel();
+  setLS({levels: levels, music: currentMusic});
+  closeEsc();showMenu();
+}
+function escExit(){closeEsc();showMenu();}
+function doTest(){
+  const {levels} = getLS();
+  if(edIdx>=0)startGame(levels[edIdx],true);else{saveLevel();startGame(levels[edIdx],true);}
+}
+
+let activeMenu = null;
+function openActiveMenu() {
+    if(selObjs.length !== 1) return;
+    const o = selObjs[0];
+    if (o.typeId === 'bg_trigger') {
+        $('trig-col').value = o.bgCol || '#ff0000';
+        $('trig-fade').value = o.bgFade !== undefined ? o.bgFade : 0.5;
+        $('trig-opac').value = o.bgOpac !== undefined ? o.bgOpac : 1.0;
+        $('trig-touch').checked = !!o.touch;
+        show('trig-menu','flex'); activeMenu = 'trig-menu';
+    } else if (o.typeId === 'ground_trigger') {
+        $('gtrig-col').value = o.gtCol || '#3a5520';
+        $('gtrig-fade').value = o.gtFade !== undefined ? o.gtFade : 0.5;
+        $('gtrig-touch').checked = !!o.touch;
+        show('gtrig-menu','flex'); activeMenu = 'gtrig-menu';
+    } else if (o.typeId === 'alpha_trigger') {
+        $('alpha-target').value = o.targetGroupId || 1;
+        $('alpha-fade').value = o.fadeTime !== undefined ? o.fadeTime : 0.5;
+        $('alpha-opac').value = o.opacity !== undefined ? o.opacity : 0;
+        $('alpha-touch').checked = !!o.touch;
+        show('alpha-menu','flex'); activeMenu = 'alpha-menu';
+    } else if (o.typeId === 'move_trigger') {
+        $('move-target').value = o.targetGroupId || 1;
+        $('move-x').value = o.moveX !== undefined ? o.moveX : 0;
+        $('move-y').value = o.moveY !== undefined ? o.moveY : 0;
+        $('move-time').value = o.moveTime !== undefined ? o.moveTime : 0.5;
+        $('move-touch').checked = !!o.touch;
+        show('move-menu','flex'); activeMenu = 'move-menu';
+    } else if (o.typeId === 'start_pos') {
+        $('start-mode').value = o.startMode || 'cube';
+        show('startpos-menu','flex'); activeMenu = 'startpos-menu';
+    } else if (td(o.typeId).isDeco) {
+        $('deco-col').value = o.color || '#ffffff';
+        show('deco-menu', 'flex'); activeMenu = 'deco-menu';
+    }
+}
+function openGroupMenu() {
+    if(selObjs.length === 0) return;
+    $('obj-group-id').value = selObjs[0].groupId || 0;
+    show('group-menu', 'flex'); activeMenu = 'group-menu';
+}
+
+function closeActiveMenu(){ 
+    if(activeMenu) hide(activeMenu);
+    activeMenu = null;
+}
+function bindTrigInputs(){
+  ['trig-col','trig-fade','trig-opac','trig-touch'].forEach(id=>{
+    $(id).addEventListener('input',e=>{
+      if(selObjs.length!==1 || selObjs[0].typeId !== 'bg_trigger') return;
+      const o = selObjs[0];
+      if(id==='trig-col') o.bgCol = e.target.value;
+      if(id==='trig-fade') o.bgFade = parseFloat(e.target.value);
+      if(id==='trig-opac') o.bgOpac = parseFloat(e.target.value);
+      if(id==='trig-touch') o.touch = e.target.checked;
+    });
+  });['gtrig-col','gtrig-fade','gtrig-touch'].forEach(id=>{
+    $(id).addEventListener('input',e=>{
+      if(selObjs.length!==1 || selObjs[0].typeId !== 'ground_trigger') return;
+      const o = selObjs[0];
+      if(id==='gtrig-col') o.gtCol = e.target.value;
+      if(id==='gtrig-fade') o.gtFade = parseFloat(e.target.value);
+      if(id==='gtrig-touch') o.touch = e.target.checked;
+    });
+  });['alpha-target', 'alpha-fade', 'alpha-opac', 'alpha-touch'].forEach(id => {
+    $(id).addEventListener('input', e => {
+        if(selObjs.length!==1 || selObjs[0].typeId !== 'alpha_trigger') return;
+        const o = selObjs[0];
+        if(id==='alpha-target') o.targetGroupId = parseInt(e.target.value)||1;
+        if(id==='alpha-fade') o.fadeTime = parseFloat(e.target.value)||0;
+        if(id==='alpha-opac') o.opacity = parseFloat(e.target.value)||0;
+        if(id==='alpha-touch') o.touch = e.target.checked;
+    });
+  });['move-target', 'move-x', 'move-y', 'move-time', 'move-touch'].forEach(id => {
+    $(id).addEventListener('input', e => {
+        if(selObjs.length!==1 || selObjs[0].typeId !== 'move_trigger') return;
+        const o = selObjs[0];
+        if(id==='move-target') o.targetGroupId = parseInt(e.target.value)||1;
+        if(id==='move-x') o.moveX = parseFloat(e.target.value)||0;
+        if(id==='move-y') o.moveY = parseFloat(e.target.value)||0; 
+        if(id==='move-time') o.moveTime = parseFloat(e.target.value)||0;
+        if(id==='move-touch') o.touch = e.target.checked;
+    });
+  });
+  $('start-mode').addEventListener('change', e => {
+      if(selObjs.length!==1 || selObjs[0].typeId !== 'start_pos') return;
+      selObjs[0].startMode = e.target.value;
+  });
+  $('obj-group-id').addEventListener('input', e => {
+      if(selObjs.length === 0) return;
+      const gid = parseInt(e.target.value) || 0;
+      selObjs.forEach(o => o.groupId = gid);
+  });
+  $('deco-col').addEventListener('input', e => {
+      if(selObjs.length !== 1 || !td(selObjs[0].typeId).isDeco) return;
+      selObjs[0].color = e.target.value;
+      tintCache.clear(); 
+  });
+}
+
+let edC,edCtx,edWrap;
+function initEd(){
+  edWrap=$('ed-wrap');edC=$('ed-c');edCtx=edC.getContext('2d');resizeEd();
+  if(!edListened){
+    edListened=true;
+    edC.addEventListener('mousedown',edMD);
+    edC.addEventListener('contextmenu',e=>e.preventDefault());
+    window.addEventListener('contextmenu', e => { if($('editor').style.display==='flex') e.preventDefault(); });
+    window.addEventListener('blur', () => { isRmbDown=false; isMmbDown=false; lmbDown=false; lmbDrag=false; objDrag=false; });
+    edC.addEventListener('wheel',edWhl,{passive:false});
+    window.addEventListener('mousemove',edMM);
+    window.addEventListener('mouseup',edMU);
+    window.addEventListener('keydown',edKey);
+    window.addEventListener('resize',resizeEd);
+    bindTrigInputs();
+
+    $('browse-music-btn').addEventListener('click', () => {
+        $('local-music-input').click();
+    });
+    $('local-music-input').addEventListener('change', handleLocalMusicInput);
+  }
+}
+function resizeEd(){if(!edWrap)return;edC.width=edWrap.clientWidth;edC.height=edWrap.clientHeight;}
+function w2s(wx,wy){return{x:(wx-camX)*camZoom+edC.width/2,y:(wy-camY)*camZoom+edC.height/2};}
+function s2w(sx,sy){return{x:(sx-edC.width/2)/camZoom+camX,y:(sy-edC.height/2)/camZoom+camY};}
+function snap(v, step){ return Math.round(v/step)*step; }
+function gSXY(e){const r=edC.getBoundingClientRect();return{sx:e.clientX-r.left,sy:e.clientY-r.top};}
+const DTHR=5;
+
+function edMD(e){
+  e.preventDefault();if(!edRun||escOp)return;
+  if(e.button===2){ 
+    lmbDown=false; isRmbDown=true;
+    const {sx,sy} = gSXY(e); const wp=s2w(sx,sy); pushUndo(); deleteAt(wp.x,wp.y);
+    return;
+  }
+  if(e.button===1){ isMmbDown=true; return; }
+  
+  if(e.button===0){
+    lmbDown=true;lmbDrag=false;lmbShift=e.shiftKey;lmbOnCanvas=true;
+    const{sx,sy}=gSXY(e);lmbSX=sx;lmbSY=sy;
+    if(lmbShift){
+      const wp=s2w(sx,sy);sboxX=wp.x;sboxY=wp.y;sboxW=0;sboxH=0;lmbDrag=true;
+    } else if(edTool==='size'){
+      const wp=s2w(sx,sy);const hit=getAt(wp.x,wp.y);
+      if(hit){selObjs=[hit];selScale=hit.scale||1;}
+      szBase=e.clientX;szOrig=selObjs.map(o=>o.scale||1);updSzLbl();
+    }
+  }
+}
+function edMM(e){
+  if(!edRun||escOp)return;
+  
+  // Guard against sticky mouse states if physical button released outside canvas
+  if(isRmbDown && !(e.buttons & 2)) isRmbDown = false;
+  if(isMmbDown && !(e.buttons & 4)) isMmbDown = false;
+  if(lmbDown && !(e.buttons & 1)) { lmbDown = false; lmbDrag = false; }
+  
+  if(isMmbDown){camX-=e.movementX/camZoom;camY-=e.movementY/camZoom;return;}
+  
+  if(isRmbDown){
+    const {sx,sy} = gSXY(e); const wp=s2w(sx,sy); deleteAt(wp.x,wp.y); return;
+  }
+  
+  if(!lmbDown)return;
+  const{sx,sy}=gSXY(e);
+  const mv=Math.abs(sx-lmbSX)+Math.abs(sy-lmbSY);
+  if(!lmbDrag&&mv>DTHR)lmbDrag=true;
+  if(!lmbDrag)return;
+  
+  if(lmbShift){
+    const wp=s2w(sx,sy);sboxW=wp.x-sboxX;sboxH=wp.y-sboxY;return;
+  }
+  if(edTool==='select'&&objDrag&&selObjs.length){
+    const wp=s2w(sx,sy);selObjs.forEach((o,i)=>{o.x=wp.x+objDX[i];o.y=wp.y+objDY[i];});return;
+  }
+  if(edTool==='select'&&!objDrag){
+    const wp=s2w(sx,sy);sboxW=wp.x-sboxX;sboxH=wp.y-sboxY;return;
+  }
+  if(edTool==='size'&&szBase!==null&&selObjs.length){
+    const d=(e.clientX-szBase)*0.005;
+    selObjs.forEach((o,i)=>{o.scale=Math.max(0.1,Math.min(8,(szOrig[i]||1)+d));});updSzLbl();return;
+  }
+
+  if(edTool==='place'){
+    camX-=e.movementX/camZoom;
+    camY-=e.movementY/camZoom;
+  }
+}
+function edMU(e){
+  e.preventDefault();
+  if(e.button===2){isRmbDown=false;return;}
+  if(e.button===1){isMmbDown=false;return;}
+  if(e.button===0){
+    if(!lmbOnCanvas){lmbDown=false;lmbDrag=false;lmbShift=false;return;}
+    const wd=lmbDrag,ws=lmbShift;
+    const wp=s2w(lmbSX,lmbSY);
+    if(!wd&&!ws&&edRun&&!escOp){
+      if(edTool==='place'){pushUndo();placeObj(wp.x,wp.y);}
+      else if(edTool==='select'){
+        const hit=getAt(wp.x,wp.y);
+        if(hit){
+          if(e.shiftKey) { 
+              if (selObjs.includes(hit)) selObjs = selObjs.filter(o => o !== hit);
+              else selObjs.push(hit);
+          } else {
+              if(!selObjs.includes(hit)) selObjs=[hit];
+          }
+          objDrag=false;
+          objDX=selObjs.map(o=>o.x-wp.x);objDY=selObjs.map(o=>o.y-wp.y);
+        } else {
+            if(!e.shiftKey) selObjs=[];
+        }
+      }
+    }
+    if(wd&&!ws&&edTool==='select'&&!objDrag)finishBox(false);
+    if(wd&&ws)finishBox(true);
+    lmbDown=false;lmbDrag=false;lmbShift=false;lmbOnCanvas=false;objDrag=false;szBase=null;
+  }
+}
+function finishBox(add){
+  const mnX=Math.min(sboxX,sboxX+sboxW),mxX=Math.max(sboxX,sboxX+sboxW);
+  const mnY=Math.min(sboxY,sboxY+sboxH),mxY=Math.max(sboxY,sboxY+sboxH);
+  const f=edObjs.filter(o=>{
+    const t=td(o.typeId),sc=o.scale||1,hw=t.w*TILE*sc/2,hh=t.h*TILE*sc/2;
+    return o.x+hw>mnX&&o.x-hw<mxX&&o.y+hh>mnY&&o.y-hh<mxY;
+  });
+  selObjs=add?[...new Set([...selObjs,...f])]:f;
+  sboxW=0;sboxH=0;
+}
+function edWhl(e){
+  e.preventDefault();
+  if(edTool==='size'&&selObjs.length){
+    const d=e.deltaY<0?0.1:-0.1;
+    selObjs.forEach(o=>{o.scale=Math.max(0.1,Math.min(8,(o.scale||1)+d));});updSzLbl();return;
+  }
+  camZoom=Math.max(0.1,Math.min(5,camZoom*(e.deltaY<0?1.11:0.9)));
+}
+
+function getSelectionBboxCenter() {
+    if (selObjs.length === 0) return { x: 0, y: 0 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    selObjs.forEach(o => {
+        const t = td(o.typeId);
+        const sc = o.scale || 1;
+        const hw = t.w * TILE * sc / 2;
+        const hh = t.h * TILE * sc / 2;
+        minX = Math.min(minX, o.x - hw);
+        minY = Math.min(minY, o.y - hh);
+        maxX = Math.max(maxX, o.x + hw);
+        maxY = Math.max(maxY, o.y + hh);
+    });
+    return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+
+function rotSel(d) {
+    if (selObjs.length === 0) return;
+    if (selObjs.length === 1) {
+        selObjs[0].rot = (selObjs[0].rot || 0) + d;
+    } else {
+        const center = getSelectionBboxCenter();
+        const rad = d * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        selObjs.forEach(o => {
+            const dx = o.x - center.x;
+            const dy = o.y - center.y;
+            const xRotated = dx * cos - dy * sin;
+            const yRotated = dx * sin + dy * cos;
+            o.x = center.x + xRotated;
+            o.y = center.y + yRotated;
+            o.rot = (o.rot || 0) + d;
+        });
+    }
+}
+
+function edKey(e){
+  if($('editor').style.display!=='flex')return;
+  if(e.key==='Escape'){escOp?closeEsc():openEsc();return;}
+  if(escOp)return;
+  if(e.target.tagName==='INPUT' || e.target.tagName==='SELECT')return;
+  const step=e.shiftKey?4:TILE;
+  
+  if(e.ctrlKey && (e.key==='z'||e.key==='Z')) { doUndo(); e.preventDefault(); return; }
+  if(e.ctrlKey && (e.key==='y'||e.key==='Y')) { doRedo(); e.preventDefault(); return; }
+
+  if(e.ctrlKey && (e.key==='d'||e.key==='D')) { 
+    if(selObjs.length > 0){
+      pushUndo();
+      const newSels=[];
+      selObjs.forEach(o=>{
+        const no={...o, x: o.x+TILE, y: o.y};
+        edObjs.push(no);
+        newSels.push(no);
+      });
+      selObjs=newSels;
+    }
+    e.preventDefault(); 
+    return;
+  }
+  
+  if(e.key==='m'||e.key==='M')showHB=!showHB;
+  
+  const moveKeys =['a','A','ArrowLeft','d','D','ArrowRight','w','W','ArrowUp','s','S','ArrowDown'];
+  if (selObjs.length === 0 && moveKeys.includes(e.key)) {
+    const panStep = 60 / camZoom;
+    if(e.key==='a'||e.key==='A'||e.key==='ArrowLeft') camX-=panStep;
+    if(e.key==='d'||e.key==='D'||e.key==='ArrowRight') camX+=panStep;
+    if(e.key==='w'||e.key==='W'||e.key==='ArrowUp') camY-=panStep;
+    if(e.key==='s'||e.key==='S'||e.key==='ArrowDown') camY+=panStep;
+  } else if (selObjs.length > 0) {
+    if(e.key==='q'||e.key==='Q')rotSel(-15);
+    if(e.key==='e'||e.key==='E')rotSel(15);
+    if(moveKeys.includes(e.key)){
+        if(e.key==='a'||e.key==='A'||e.key==='ArrowLeft')movSel(-step,0);
+        if(e.key==='d'||e.key==='D'||e.key==='ArrowRight')movSel(step,0);
+        if(e.key==='w'||e.key==='W'||e.key==='ArrowUp')movSel(0,-step);
+        if(e.key==='s'||e.key==='S'||e.key==='ArrowDown')movSel(0,step);
+    }
+    if(e.key==='Delete'||e.key==='Backspace'){pushUndo();delSel();}
+  }
+}
+function movSel(dx,dy){selObjs.forEach(o=>{o.x+=dx;o.y+=dy;});}
+function delSel(){
+  edObjs=edObjs.filter(o=>!selObjs.includes(o));
+  selObjs=[];
+}
+
+function placeObj(wx,wy){
+  const t=selType,sc=selScale;
+  const step = (t.id === 'half_block' || t.id === 'small_spk' || t.id === 'black_spk' || t.isDeco || t.id === 'saw') ? TILE/2 : TILE;
+  const sw = t.w * TILE * sc;
+  const sh = t.h * TILE * sc;
+  
+  const sx = Math.round((wx - sw/2) / step) * step + sw/2;
+  const sy = Math.round((wy - sh/2) / step) * step + sh/2;
+
+  const objTop=sy-sh/2;
+  if(objTop>=GROUND_Y)return;
+  
+  const occupied=edObjs.some(o=>{
+    const ot=td(o.typeId),osc=o.scale||1;
+    if (t.isDeco || ot.isDeco || t.kind === 'saw' || ot.kind === 'saw' || t.kind === 'trigger' || ot.kind === 'trigger' || t.kind === 'start_pos' || ot.kind === 'start_pos') return false; 
+    const ohw=ot.w*TILE*osc/2,ohh=ot.h*TILE*osc/2;
+    const thw=sw/2,thh=sh/2;
+    return Math.abs(o.x-sx)<(thw+ohw)*0.5&&Math.abs(o.y-sy)<(thh+ohh)*0.5;
+  });
+  if(occupied)return;
+  const newObj = {typeId:t.id,x:sx,y:sy,rot:0,scale:sc};
+  edObjs.push(newObj);
+  selObjs = [newObj]; 
+}
+function getAt(wx,wy){
+  for(let i=edObjs.length-1;i>=0;i--){
+    const o=edObjs[i],t=td(o.typeId),sc=o.scale||1;
+    const hw=t.w*TILE*sc/2,hh=t.h*TILE*sc/2;
+    if(wx>=o.x-hw&&wx<=o.x+hw&&wy>=o.y-hh&&wy<=o.y+hh)return o;
+  }
+  return null;
+}
+function deleteAt(wx,wy){
+  const o=getAt(wx,wy);
+  if(o){
+    edObjs=edObjs.filter(x=>x!==o);
+    if(selObjs.includes(o)) selObjs = selObjs.filter(x=>x!==o);
+  }
+}
+
+let lastSelCount = -1, lastSelType = '';
+function updTrigUI() {
+  const c = selObjs.length;
+  const tId = c === 1 ? selObjs[0].typeId : '';
+  const type = tId ? td(tId) : null;
+  const b = $('btn-edit-obj');
+  const g = $('btn-edit-group');
+
+  if(c !== lastSelCount || tId !== lastSelType) {
+    lastSelCount = c; lastSelType = tId;
+    closeActiveMenu(); 
+    
+    if(b) {
+      if(c === 1 && (tId === 'bg_trigger' || tId === 'ground_trigger' || tId === 'alpha_trigger' || tId === 'move_trigger' || tId === 'start_pos' || (type && type.isDeco))) b.style.display = 'block';
+      else b.style.display = 'none';
+    }
+    if(g) {
+      if(c > 0) g.style.display = 'block';
+      else g.style.display = 'none';
+    }
+  }
+}
+
+function edLoop(){
+  if(!edRun||$('editor').style.display!=='flex'){edRun=false;return;}
+  drawEd();
+  updTrigUI();
+  requestAnimationFrame(edLoop);
+}
+function drawEd(){
+  const W=edC.width,H=edC.height;
+  edCtx.clearRect(0,0,W,H);
+  drawBg(edCtx,W,H,camX,camY,bgColor);
+
+  edCtx.strokeStyle='rgba(255,255,255,.09)';edCtx.lineWidth=1;
+  const tS = TILE * camZoom; 
+  const originSX = (0 - camX)*camZoom + edC.width/2;
+  const originSY = (0 - camY)*camZoom + edC.height/2;
+  const gox = ((originSX % tS) + tS) % tS;
+  const goy = ((originSY % tS) + tS) % tS;
+  for(let x=gox-tS;x<W+tS;x+=tS){edCtx.beginPath();edCtx.moveTo(x,0);edCtx.lineTo(x,H);edCtx.stroke();}
+  for(let y=goy-tS;y<H+tS;y+=tS){edCtx.beginPath();edCtx.moveTo(0,y);edCtx.lineTo(W,y);edCtx.stroke();}
+
+  const gsc=w2s(0,GROUND_Y);
+  const gsy=gsc.y;
+  const tW=GROUND_TS*camZoom;
+  // Compute editor ground preview color: use first ground_trigger color if any exist, else edGroundColor
+  let edGndPreview = edGroundColor;
+  const firstGTrig = edObjs.find(o => o.typeId === 'ground_trigger' && o.gtCol);
+  if(firstGTrig) edGndPreview = firstGTrig.gtCol;
+
+  edCtx.fillStyle='#000';
+  edCtx.fillRect(0,gsy,W,H);
+  if(ok(IM.ground)){
+    const sx0=(((-camX%GROUND_TS)*camZoom+W/2)%tW+tW)%tW-tW;
+    for(let tx=sx0;tx<W+tW;tx+=tW){
+      edCtx.drawImage(IM.ground,tx,gsy,tW,tW);
+    }
+    // Preview ground color tint in editor
+    edCtx.globalCompositeOperation='multiply';
+    edCtx.fillStyle=edGndPreview;
+    edCtx.fillRect(0,gsy,W,H);
+    edCtx.globalCompositeOperation='source-over';
+  } else {
+    edCtx.fillStyle=edGndPreview;edCtx.fillRect(0,gsy,W,tW);
+  }
+  edCtx.strokeStyle='rgba(255,220,0,.55)';edCtx.lineWidth=2;edCtx.setLineDash([7,5]);
+  edCtx.beginPath();edCtx.moveTo(0,gsy);edCtx.lineTo(W,gsy);edCtx.stroke();
+  
+  const csc=w2s(0,CEIL_Y);
+  const csy=csc.y;
+  edCtx.strokeStyle='rgba(255,100,100,.55)';edCtx.lineWidth=2;
+  edCtx.beginPath();edCtx.moveTo(0,csy);edCtx.lineTo(W,csy);edCtx.stroke();
+  
+  edCtx.setLineDash([]);
+
+  // Draw persistent playtest trail in Editor
+  if (playTrail && playTrail.length > 1) {
+    edCtx.save();
+    edCtx.strokeStyle = 'rgba(0, 255, 100, 0.7)';
+    edCtx.lineWidth = 4;
+    edCtx.lineCap = 'round';
+    edCtx.lineJoin = 'round';
+    edCtx.beginPath();
+    for (let i = 0; i < playTrail.length; i++) {
+        const pt = w2s(playTrail[i].x, playTrail[i].y);
+        if (i === 0) edCtx.moveTo(pt.x, pt.y);
+        else edCtx.lineTo(pt.x, pt.y);
+    }
+    edCtx.stroke();
+    edCtx.restore();
+  }
+
+  edObjs.forEach(o=>{
+    const t=td(o.typeId),sc=o.scale||1;
+    const scr=w2s(o.x,o.y),sw=t.w*TILE*sc*camZoom,sh=t.h*TILE*sc*camZoom;
+    const rot=(o.rot||0)*Math.PI/180,isSel=selObjs.includes(o);
+    edCtx.save();edCtx.translate(scr.x,scr.y);
+    if(t.kind === 'saw') edCtx.rotate(rot + performance.now() / -250); // Continually spins
+    else edCtx.rotate(rot);
+
+    if(isSel){edCtx.shadowColor='#FFD700';edCtx.shadowBlur=16;}
+    const img=IM[t.img];
+    
+    if(ok(img)) {
+      if (t.isDeco && o.color) {
+        const tinted = getTinted(img, o.color, Math.ceil(sw), Math.ceil(sh));
+        edCtx.drawImage(tinted, -sw/2, -sh/2, sw, sh);
+      } else {
+        edCtx.drawImage(img,-sw/2,-sh/2,sw,sh);
+      }
+    }
+    else{edCtx.fillStyle='#555';edCtx.fillRect(-sw/2,-sh/2,sw,sh);}
+    edCtx.shadowBlur=0;
+    
+    if(showHB){
+      if(t.kind==='block'&&t.solid){
+        edCtx.strokeStyle='rgba(60,80,255,.9)';
+        edCtx.lineWidth=2;
+        edCtx.strokeRect(-sw/2,-sh/2,sw,sh); 
+      }
+      else if(t.kind==='spike'){
+        edCtx.strokeStyle='rgba(255,80,80,.9)';
+        edCtx.lineWidth=2;
+        const sHW_visual = (sw/2) * 0.40;  
+        const sHH_visual = (sh/2) * 0.60; 
+        const spikeCenterY_visual = (sh/2) - sHH_visual;
+        edCtx.strokeRect(-sHW_visual, spikeCenterY_visual - sHH_visual, sHW_visual*2, sHH_visual*2);
+      }
+      else if(t.kind==='slope'){
+        edCtx.strokeStyle='rgba(60,80,255,.9)';
+        edCtx.lineWidth=2;
+        edCtx.beginPath();
+        edCtx.moveTo(-sw/2,  sh/2);
+        edCtx.lineTo( sw/2,  sh/2);
+        edCtx.lineTo( sw/2, -sh/2);
+        edCtx.closePath();
+        edCtx.stroke();
+      }
+      else if(t.kind==='saw'){
+        edCtx.strokeStyle='rgba(255,80,80,.9)';
+        edCtx.lineWidth=2;
+        edCtx.beginPath();
+        edCtx.arc(0, 0, 0.75 * TILE * sc * camZoom, 0, Math.PI*2); // Precise circular hitbox scale
+        edCtx.stroke();
+      }
+      else if(t.kind==='trigger' || t.kind==='start_pos'){
+        edCtx.strokeStyle='rgba(100,255,100,.9)';
+        edCtx.lineWidth=2;
+        edCtx.strokeRect(-sw/2,-sh/2,sw,sh); 
+      }
+    }
+    edCtx.restore();
+
+    if(o.groupId) {
+        edCtx.fillStyle = '#2ECC40';
+        edCtx.font = 'bold 12px Arial';
+        edCtx.fillText(`G${o.groupId}`, scr.x - sw/2, scr.y - sh/2 - 6);
+    }
+    if(isSel){edCtx.strokeStyle='#FFD700';edCtx.lineWidth=2;edCtx.strokeRect(scr.x-sw/2-3,scr.y-sh/2-3,sw+6,sh+6);}
+  });
+
+  if(lmbDrag&&(sboxW||sboxH)){
+    const sc2=w2s(sboxX,sboxY),bw=sboxW*camZoom,bh=sboxH*camZoom;
+    edCtx.strokeStyle='rgba(80,180,255,.9)';edCtx.fillStyle='rgba(80,180,255,.1)';edCtx.lineWidth=2;
+    edCtx.fillRect(sc2.x,sc2.y,bw,bh);edCtx.strokeRect(sc2.x,sc2.y,bw,bh);
+  }
+
+  const org=w2s(0,GROUND_Y-TILE*0.5);
+  edCtx.fillStyle='rgba(0,255,100,.85)';edCtx.fillRect(org.x-4,org.y-4,8,8);
+  edCtx.fillStyle='rgba(0,255,100,.75)';edCtx.font='bold 11px Arial';edCtx.fillText('START',org.x+6,org.y+4);
+}
+
+function saveLevel(){
+  const name=$('ed-name').value.trim()||'My Level';
+  const lv={name,bg:bgColor,groundColor:edGroundColor,objs:edObjs.map(o=>{const c={...o};delete c.activated;return c;})};
+  const {levels, music} = getLS(); 
+  if(edIdx>=0)levels[edIdx]=lv;else{levels.push(lv);edIdx=levels.length-1;}
+  setLS({levels: levels, music: music}); 
+  const el=document.createElement('div');el.textContent='Saved!';
+  Object.assign(el.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',background:'#2ECC40',color:'#fff',padding:'8px 24px',borderRadius:'10px',fontWeight:900,fontSize:'15px',zIndex:9999,pointerEvents:'none'});
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1400);
+}
+function testLevel(){saveLevel();doTest();}
+function playLevel(i){
+    hide('levels-screen');
+    startGame(getLS().levels[i],false);
+} 
+
+
+// ── GAME STATE ──
+let gC,gCtx2,gRun=false,gAF=null,curLv,fromEd;
+let player={},gMode='cube',gCamX=0, gCamY=0; 
+let lvEnd=0,dead=false,won=false;
+let jHeld=false,jPrev=false,jumpBuf=0;
+let hbx2=false,lastT=0;
+let orbAnims=[]; 
+let deathParticles=[], deathWave=0, respawnTimer=0;
+
+function sX(wx) { return wx - gCamX; }
+function sY(wy) { return wy - gCamY + (gC ? (gC.height / gZoom) / 2 : 0); }
+
+function updateAttemptsDisplay() {
+  $('attempts-display').textContent = 'Attempts: ' + attempts;
+}
+
+function getObjPos(obj) {
+    if (!obj.groupId || !gMove[obj.groupId]) return { x: obj.x, y: obj.y };
+    const m = gMove[obj.groupId];
+    return { x: obj.x + m.curX, y: obj.y + m.curY };
+}
+function getObjAlpha(obj) {
+    if (!obj.groupId || !gAlpha[obj.groupId]) return 1;
+    return gAlpha[obj.groupId].current;
+}
+
+function startGame(lv,fe){
+  edRun=false;hide('menu');hide('editor');show('game','block');
+  hide('win-screen');
+  curLv=lv;fromEd=fe;
+  bgColor = lv.bg || '#1a2a6c';
+  const bgInp = $('bg-color-inp');
+  if(bgInp) bgInp.value = bgColor;
+  $('g-title').textContent=lv.name;
+  hbx2=false;gMode='cube';dead=false;won=false;jHeld=false;jPrev=false;jumpBuf=0;orbAnims=[];
+  deathParticles=[]; deathWave=0; respawnTimer=0;
+  
+  if(fromEd) playTrail =[];
+
+  initAudio(); 
+
+  gC=$('game-c');gC.width=innerWidth;gC.height=innerHeight;
+  gCtx2=gC.getContext('2d');
+  lvEnd=0;lv.objs.forEach(o=>{if(o.x>lvEnd)lvEnd=o.x;});lvEnd+=TILE*8;
+  
+  curLv.objs.forEach(o=>{ 
+      o.activated = false; 
+      if(td(o.typeId).kind === 'orb') o.used = false; 
+  });
+  let baseCol = hexToRgb(bgColor);
+  gBgCol =[...baseCol]; gBgTarget =[...baseCol];
+  gBgFadeT = 0; gBgFadeDur = 0;
+  gBgOpac = 1; gBgStartOpac = 1; gBgTargetOpac = 1;
+  const initGnd = hexToRgb(lv.groundColor||'#3a6020');
+  gGndCol=[...initGnd]; gGndTarget=[...initGnd]; gGndFadeT=0; gGndFadeDur=0; gGndStartCol=[...initGnd];
+
+  resetPl(); 
+  
+  if (currentMusic !== 'none' && audioPlayer.src) { 
+      audioPlayer.currentTime = 0; 
+      audioPlayer.play().catch(e => console.error("Error playing music at start:", e));
+  } else {
+      audioPlayer.pause(); 
+      audioPlayer.currentTime = 0;
+  }
+
+  gC.removeEventListener('mousedown',gClick);gC.removeEventListener('mouseup',gMUp);
+  document.removeEventListener('keydown',gKD);document.removeEventListener('keyup',gKU);
+  window.removeEventListener('resize',gRes);
+  gC.addEventListener('mousedown',gClick);gC.addEventListener('mouseup',gMUp);
+  document.addEventListener('keydown',gKD);document.addEventListener('keyup',gKU);
+  window.addEventListener('resize',gRes);
+  stopGame();lastT=performance.now();gRun=true;gAF=requestAnimationFrame(gLoop);
+
+  updateAttemptsDisplay(); 
+}
+
+function resetPl(){
+  player={x:TILE*3,y:GROUND_Y-TILE*0.5,vy:0,rot:0,onGround:false,slopeTargetRot:0,onSlope:false,wasOnSlope:false};
+  gMode='cube';
+  gAlpha = {};
+  gMove = {};
+  
+  const startPosObj = curLv.objs.find(o => o.typeId === 'start_pos');
+  if(startPosObj) {
+      player.x = startPosObj.x;
+      player.y = startPosObj.y;
+      gMode = startPosObj.startMode || 'cube';
+  }
+
+  gZoom = gC ? gC.height / 768 : 1; 
+  const logicalW = gC ? gC.width / gZoom : innerWidth;
+  
+  gCamX = player.x - logicalW * 0.3;
+  gCamY = GROUND_Y - 4 * TILE;
+  shipTransAnim=0; shipTransDir=1; prevGMode=gMode;
+  orbAnims=[];
+  pWaveTrail =[]; 
+}
+
+function gRes(){if(gC){gC.width=innerWidth;gC.height=innerHeight;}}
+function stopGame(){gRun=false;if(gAF){cancelAnimationFrame(gAF);gAF=null;}}
+function gKD(e){if(!gRun)return;if(e.code==='Space'||e.code==='ArrowUp'){jHeld=true;jumpBuf=0.15;}if(e.key==='m'||e.key==='M')hbx2=!hbx2;}
+function gKU(e){if(e.code==='Space'||e.code==='ArrowUp')jHeld=false;}
+function gClick(e){if(!gRun)return;if(won){exitGame();return;}if(dead)return; initAudio(); jHeld=true;jumpBuf=0.15;}
+function gMUp(){jHeld=false;}
+function exitGame(){
+  if(isMultiplayer) {
+      channel.postMessage({ type: 'playerLeave', id: myPlayerId });
+      isMultiplayer = false;
+  }
+  stopGame();jHeld=false;
+  
+  if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+  }
+
+  gC&&gC.removeEventListener('mousedown',gClick);gC&&gC.removeEventListener('mouseup',gMUp);
+  document.removeEventListener('keydown',gKD);document.removeEventListener('keyup',gKU);
+  window.removeEventListener('resize',gRes);
+  if(fromEd)openEditor();else showMenu();
+}
+function respawn(){
+  dead=false;won=false;jHeld=false;jPrev=false;jumpBuf=0;orbAnims=[];
+  hide('win-screen');
+  resetPl();
+  
+  if(fromEd) playTrail =[];
+  initAudio();
+
+  let baseCol = hexToRgb(bgColor);
+  gBgCol =[...baseCol]; gBgTarget =[...baseCol]; gBgFadeT = 0; gBgFadeDur = 0;
+  gBgOpac = 1; gBgStartOpac = 1; gBgTargetOpac = 1;
+  const initGnd2 = hexToRgb(curLv.groundColor||'#3a6020');
+  gGndCol=[...initGnd2]; gGndTarget=[...initGnd2]; gGndFadeT=0; gGndFadeDur=0; gGndStartCol=[...initGnd2];
+  curLv.objs.forEach(o=>{ 
+      o.activated = false; 
+      if(td(o.typeId).kind === 'orb') o.used = false; 
+  });
+  lastT=performance.now();gRun=true;gAF=requestAnimationFrame(gLoop);
+  
+  if (currentMusic !== 'none' && audioPlayer.src) { 
+      audioPlayer.currentTime = 0; 
+      audioPlayer.play().catch(e => console.error("Error playing music on respawn:", e));
+  } else {
+      audioPlayer.pause(); 
+      audioPlayer.currentTime = 0;
+  }
+  updateAttemptsDisplay(); 
+}
+
+function gLoop(ts){
+  if(!gRun)return;
+  const dt=Math.min((ts-lastT)/1000,0.05);lastT=ts;
+  if(!dead&&!won)updateG(dt);
+  else if(dead) updateDeath(dt);
+  orbAnims=orbAnims.filter(a=>{a.t+=dt;return a.t<=0.31;});
+  otherDeathFX.forEach(fx => {
+      fx.wave += dt * 350;
+      fx.particles.forEach(p => {
+          p.vy += GRAVITY * dt * 0.45;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.rot += p.rotV * dt;
+      });
+  });
+  otherDeathFX = otherDeathFX.filter(fx => fx.wave < 300);
+
+  if (isMultiplayer && ts - lastBroadcast > 50) { // Broadcast ~20 times/sec
+        channel.postMessage({
+            type: 'playerUpdate',
+            id: myPlayerId,
+            name: myUsername,
+            x: player.x,
+            y: player.y,
+            rot: player.rot,
+            gMode: gMode,
+            waveTrail: gMode === 'wave' ? pWaveTrail.slice(-50) : [],
+        });
+        lastBroadcast = ts;
+
+        // Cleanup disconnected players
+        for (const [id, p] of otherPlayers.entries()) {
+            if (Date.now() - p.lastSeen > 3000) {
+                otherPlayers.delete(id);
+            }
+        }
+  }
+  drawG();gAF=requestAnimationFrame(gLoop);
+}
+
+function updateDeath(dt) {
+    respawnTimer -= dt;
+    deathWave += dt * 350;
+    deathParticles.forEach(p => {
+        p.vy += GRAVITY * dt * 0.45;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.rotV * dt;
+        if (p.y > GROUND_Y - p.size/2) {
+            p.y = GROUND_Y - p.size/2;
+            p.vy *= -0.55; p.vx *= 0.8; p.rotV *= 0.8;
+        }
+    });
+    if (respawnTimer <= 0) respawn();
+}
+
+function updateG(dt){
+  gZoom = gC.height / 850; 
+  const logicalW = gC.width / gZoom;
+
+  if (fromEd) playTrail.push({x: player.x, y: player.y});
+
+  if (analyser && !audioPlayer.paused) {
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < 8; i++) sum += dataArray[i];
+      let avg = sum / 8;
+      musicPulse = 1 + (avg / 255) * 0.35;
+  } else {
+      musicPulse = 1.0;
+  }
+
+  // Handle Triggers Animation
+  for(const gid in gAlpha) {
+      const a = gAlpha[gid];
+      if(a.time < a.dur) {
+          a.time += dt;
+          let p = Math.min(1, a.time / a.dur);
+          a.current = lerp(a.start, a.target, p);
+      }
+  }
+  for(const gid in gMove) {
+      const m = gMove[gid];
+      if(m.time < m.dur) {
+          m.time += dt;
+          let p = Math.min(1, m.time / m.dur);
+          const eased = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2)/2; 
+          m.curX = lerp(m.startX, m.targetX, eased);
+          m.curY = lerp(m.startY, m.targetY, eased);
+      }
+  }
+
+  player.x+=PLAYER_SPD*dt;
+  gCamX=player.x-logicalW*0.3;
+
+  let isTunnel = (gMode === 'ship' || gMode === 'wave');
+  let wasTunnel = (prevGMode === 'ship' || prevGMode === 'wave');
+  if(gMode !== prevGMode){
+    if(isTunnel !== wasTunnel) {
+        shipTransDir = isTunnel ? 1 : -1;
+        shipTransAnim = TRANS_DUR;
+    }
+    prevGMode = gMode;
+  }
+  if(shipTransAnim > 0) shipTransAnim = Math.max(0, shipTransAnim - dt);
+
+  const cubeCamY = GROUND_Y - 4 * TILE; 
+  const shipMid = (GROUND_Y + CEIL_Y) / 2;
+  
+  if(!isTunnel && shipTransAnim <= 0){
+    gCamY = cubeCamY;
+  } else if(isTunnel && shipTransAnim <= 0){
+    gCamY = shipMid;
+  } else {
+    const tRaw2 = shipTransDir===1 ? 1-(shipTransAnim/TRANS_DUR) : (shipTransAnim/TRANS_DUR);
+    const tE2 = Math.min(1,Math.max(0,tRaw2));
+    const ea2 = tE2<0.5?2*tE2*tE2:1-Math.pow(-2*tE2+2,2)/2;
+    gCamY = cubeCamY + (shipMid - cubeCamY) * ea2;
+  }
+
+  if(gBgFadeDur > 0) {
+    gBgFadeT += dt;
+    let p = Math.min(1, gBgFadeT / gBgFadeDur);
+    if(!window.gBgStartCol) window.gBgStartCol =[...gBgCol];
+    for(let i=0; i<3; i++) gBgCol[i] = lerp(window.gBgStartCol[i], gBgTarget[i], p);
+    gBgOpac = lerp(gBgStartOpac, gBgTargetOpac, p);
+  }
+  if(gGndFadeDur > 0) {
+    gGndFadeT += dt;
+    let p = Math.min(1, gGndFadeT / gGndFadeDur);
+    for(let i=0; i<3; i++) gGndCol[i] = lerp(gGndStartCol[i], gGndTarget[i], p);
+  }
+
+  if(gMode==='cube'){
+    player.vy+=GRAVITY*dt;
+    player.y+=player.vy*dt;
+    if(jumpBuf>0) jumpBuf-=dt;
+    player.onGround=false;
+    const bot=player.y+TILE*0.5;
+    if(bot>=GROUND_Y){
+      player.y=GROUND_Y-TILE*0.5;
+      player.vy=0;
+      player.onGround=true;
+    }
+    if(!player.onGround) player.rot+=390*dt;
+    player.onSlope = false; 
+    jPrev=jHeld;
+  } else if(gMode==='ship'){
+    if(jHeld)player.vy+=SHIP_THRUST*dt;else player.vy+=SHIP_GRAV*dt;
+    player.vy=Math.max(-SHIP_MAXVY,Math.min(SHIP_MAXVY,player.vy));
+    player.y+=player.vy*dt;
+    
+    if(player.y - TILE*0.4 < CEIL_Y){ player.y=CEIL_Y+TILE*0.4; player.vy=Math.max(0,player.vy); }
+    if(player.y + TILE*0.4 >= GROUND_Y){ player.y=GROUND_Y-TILE*0.4; player.vy=0; player.onGround=true; }
+    else player.onGround=false;
+    
+    const tgt=Math.max(-50,Math.min(50,player.vy*0.05));
+    player.rot+=(tgt-player.rot)*0.22;jPrev=jHeld;
+  } else if(gMode==='wave'){
+    player.vy = jHeld ? -PLAYER_SPD : PLAYER_SPD;
+    player.y += player.vy * dt;
+    
+    let isCeil = false;
+    let isFloor = false;
+    if(player.y - TILE*0.4 <= CEIL_Y){ player.y=CEIL_Y+TILE*0.4; isCeil=true; }
+    if(player.y + TILE*0.4 >= GROUND_Y){ player.y=GROUND_Y-TILE*0.4; player.onGround=true; isFloor=true; }
+    else player.onGround=false;
+
+    let targetRot = jHeld ? -45 : 45;
+    if (isFloor) targetRot = 0; 
+    if (isCeil) targetRot = 0;  
+
+    const rotSpeed = 900; 
+    if (player.rot < targetRot) {
+        player.rot += rotSpeed * dt;
+        if (player.rot > targetRot) player.rot = targetRot;
+    } else if (player.rot > targetRot) {
+        player.rot -= rotSpeed * dt;
+        if (player.rot < targetRot) player.rot = targetRot;
+    }
+
+    if(!dead) pWaveTrail.push({x: player.x, y: player.y});
+  }
+
+  // Clear wave trail if it goes offscreen
+  while(pWaveTrail.length > 0 && pWaveTrail[0].x < gCamX - TILE*2) {
+      pWaveTrail.shift();
+  }
+
+  const pRedHW = TILE * 0.50, pRedHH = TILE * 0.50;    
+  const pBlueHW = TILE * 0.15, pBlueHH = TILE * 0.15;  
+  const pLandHW = TILE * 0.5, pLandHH = TILE * 0.5;    
+
+  const sortedObjs = [...curLv.objs].sort((a,b) => {
+    const ak = td(a.typeId).kind, bk = td(b.typeId).kind;
+    return (ak==='slope'?0:1) - (bk==='slope'?0:1);
+  });
+
+  for(const obj of sortedObjs){
+    const t=td(obj.typeId),sc=obj.scale||1;
+    if (t.isDeco || t.kind === 'start_pos') continue; 
+    
+    const pos = getObjPos(obj);
+    const hw=t.w*TILE*sc/2,hh=t.h*TILE*sc/2;
+    const dx=Math.abs(player.x-pos.x),dy=Math.abs(player.y-pos.y);
+
+    if(t.kind==='pcube' || t.kind==='pship' || t.kind==='pwave') {
+        if(Math.abs(player.x - pos.x) < hw && Math.abs(player.y - pos.y) < hh) {
+            if(t.kind==='pcube' && gMode !== 'cube') {
+                gMode='cube'; player.rot=Math.round(player.rot/90)*90;
+            } else if(t.kind==='pship' && gMode !== 'ship') {
+                gMode='ship'; player.vy=0;
+                player.rot = player.rot % 360;
+                if(player.rot > 180) player.rot -= 360; else if(player.rot < -180) player.rot += 360;
+            } else if(t.kind==='pwave' && gMode !== 'wave') {
+                gMode='wave'; player.vy=0;
+                player.rot = player.rot % 360;
+                if(player.rot > 180) player.rot -= 360; else if(player.rot < -180) player.rot += 360;
+                pWaveTrail =[{x: player.x, y: player.y}];
+            }
+        }
+        continue; 
+    }
+
+    if(t.kind === 'trigger' && !obj.activated) {
+        let isTouch = !!obj.touch;
+        
+        let triggerActivated = false;
+        if(isTouch) {
+            if(dx <= hw + pRedHW && dy <= hh + pRedHH) triggerActivated = true;
+        } else {
+            if(player.x >= pos.x) triggerActivated = true;
+        }
+
+        if(triggerActivated) {
+            obj.activated = true;
+            if (obj.typeId === 'bg_trigger') {
+                window.gBgStartCol = [...gBgCol];
+                gBgTarget = hexToRgb(obj.bgCol || '#ff0000');
+                gBgFadeDur = parseFloat(obj.bgFade) || 0;
+                gBgFadeT = 0; gBgStartOpac = gBgOpac;
+                gBgTargetOpac = obj.bgOpac !== undefined ? parseFloat(obj.bgOpac) : 1.0;
+                if(gBgFadeDur <= 0) { gBgCol =[...gBgTarget]; gBgOpac = gBgTargetOpac; }
+            } else if (obj.typeId === 'ground_trigger') {
+                gGndStartCol =[...gGndCol];
+                gGndTarget = hexToRgb(obj.gtCol || '#3a6020');
+                gGndFadeDur = parseFloat(obj.gtFade) || 0;
+                gGndFadeT = 0;
+                if(gGndFadeDur <= 0) { gGndCol = [...gGndTarget]; }
+            } else if (obj.typeId === 'alpha_trigger') {
+                const gid = obj.targetGroupId || 1;
+                const dur = parseFloat(obj.fadeTime) || 0;
+                const targetOpacity = obj.opacity !== undefined ? parseFloat(obj.opacity) : 0;
+                if(!gAlpha[gid]) gAlpha[gid] = { current: 1 };
+                if(dur <= 0) {
+                    gAlpha[gid].current = targetOpacity;
+                    gAlpha[gid].time = 1; gAlpha[gid].dur = 1;
+                } else {
+                    gAlpha[gid].start = gAlpha[gid].current;
+                    gAlpha[gid].target = targetOpacity;
+                    gAlpha[gid].time = 0; gAlpha[gid].dur = dur;
+                }
+            } else if (obj.typeId === 'move_trigger') {
+                const gid = obj.targetGroupId || 1;
+                const dur = parseFloat(obj.moveTime) || 0;
+                const mx = (parseFloat(obj.moveX) || 0) * TILE;
+                const my = -(parseFloat(obj.moveY) || 0) * TILE; // Visually negative Y means Up in canvas
+                if(!gMove[gid]) gMove[gid] = { curX: 0, curY: 0 };
+                const currentX = gMove[gid].curX;
+                const currentY = gMove[gid].curY;
+                if(dur <= 0) {
+                    gMove[gid].curX = currentX + mx;
+                    gMove[gid].curY = currentY + my;
+                    gMove[gid].time = 1; gMove[gid].dur = 1;
+                } else {
+                    gMove[gid].startX = currentX; gMove[gid].startY = currentY;
+                    gMove[gid].targetX = currentX + mx; gMove[gid].targetY = currentY + my;
+                    gMove[gid].time = 0; gMove[gid].dur = dur;
+                }
+            }
+        }
+        continue; 
+    }
+
+    if(t.kind==='block'&&t.solid){
+      if (gMode === 'wave') {
+          if (dx < hw + TILE*0.3 && dy < hh + TILE*0.3) {
+              die(); return;
+          }
+      } else {
+          if (player.onSlope) continue;
+
+          const playerEffectiveTop = player.y - pLandHH; 
+          const playerEffectiveBottom = player.y + pLandHH;
+          const blockTopEdge = pos.y - hh;
+          const blockBottomEdge = pos.y + hh;
+
+          if (player.vy < 0 && playerEffectiveTop < blockBottomEdge && player.y > blockTopEdge && dx <= hw + pLandHW) {
+              die(); return; 
+          }
+          
+          if (dx < hw + pBlueHW && dy < hh + pBlueHH) {
+            die(); return; 
+          }
+          
+          if (player.vy >= 0 && dx <= hw + pLandHW && dy <= hh + pLandHH) {
+            const ox = (hw + pLandHW) - dx;
+            const oy = (hh + pLandHH) - dy; 
+            
+            if (player.y <= pos.y + hh - TILE*0.1 && oy < ox * 2.5) { 
+                player.y = pos.y - hh - pLandHH; 
+                player.vy = 0;
+                player.onGround = true;
+                continue; 
+            }
+          }
+      }
+    } else if(t.kind==='spike'){
+      const rad = -(obj.rot || 0) * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const pxLocal = (player.x - pos.x) * cos - (player.y - pos.y) * sin;
+      const pyLocal = (player.x - pos.x) * sin + (player.y - pos.y) * cos;
+      
+      const sHW_obj = hw * 0.40; 
+      const sHH_obj = hh * 0.60; 
+      const spikeCenterYOffset = hh - sHH_obj;
+
+      const dxSpike = Math.abs(pxLocal);
+      const dySpike = Math.abs(pyLocal - spikeCenterYOffset);
+
+      if(dxSpike <= sHW_obj + pRedHW && dySpike <= sHH_obj + pRedHH){
+          die(); return; 
+      }
+      
+    } else if(t.kind==='saw'){
+      const hitboxR = 0.75 * TILE * sc; 
+      let pHW = pRedHW, pHH = pRedHH;
+      if(gMode === 'wave'){ pHW = TILE*0.3; pHH = TILE*0.3; }
+      
+      if(dx <= pHW + hitboxR && dy <= pHH + hitboxR){
+          if(dx <= pHW || dy <= pHH) { die(); return; }
+          const cornerSq = (dx - pHW)*(dx - pHW) + (dy - pHH)*(dy - pHH);
+          if(cornerSq <= hitboxR*hitboxR) { die(); return; }
+      }
+
+    } else if(t.kind==='slope'){
+      const sRad = -(obj.rot || 0) * Math.PI / 180;
+      const sCos = Math.cos(sRad), sSin = Math.sin(sRad);
+      const relX = player.x - pos.x, relY = player.y - pos.y;
+      const lx = relX * sCos - relY * sSin; 
+      const ly = relX * sSin + relY * sCos; 
+
+      const normRot = ((obj.rot || 0) % 360 + 360) % 360;
+      const isBackwards = normRot > 90 && normRot < 270;
+
+      if(gMode === 'wave'){
+        if(Math.abs(lx) < hw + TILE*0.1 && Math.abs(ly) < hh + TILE*0.1){
+          const surfaceY = hh - (lx + hw) * (hh / hw);
+          if(isBackwards){
+            if(Math.abs(lx) < hw && Math.abs(ly) < hh){ die(); return; }
+          } else {
+            if(ly > surfaceY + TILE*0.15 && lx > -hw && lx < hw){ die(); return; }
+          }
+        }
+      } else if(isBackwards){
+        if(Math.abs(lx) < hw + pRedHW && Math.abs(ly) < hh + pRedHH){
+          const surfaceY = hh - (lx + hw) * (hh / hw);
+          if(ly > surfaceY){ die(); return; }
+        }
+      } else {
+        if(lx < hw && Math.abs(lx) < hw + pLandHW && Math.abs(ly) < hh + pLandHH && player.vy >= 0){
+          const surfaceYLocal = hh - (lx + hw) * (hh / hw);
+          const surfaceYWorld = pos.y + sSin * lx + sCos * surfaceYLocal;
+          const playerBottom = player.y + pLandHH;
+          if(playerBottom >= surfaceYWorld && player.y < pos.y + hh){
+            player.y = surfaceYWorld - pLandHH;
+            player.vy = 0;
+            player.onGround = true;
+            player.onSlope = true;
+            continue;
+          }
+        }
+      }
+    } else if(t.kind==='pad'){
+      if(player.vy>=0 && dx < hw + pLandHW && dy < hh + pLandHH){player.vy=JUMP_V*1.7;player.onGround=false;}
+    } else if(t.kind==='orb'){
+      if(!obj.used && jHeld && dx < hw + pLandHW && dy < hh + pLandHH){
+        player.vy=JUMP_V; player.onGround=false; obj.used=true;
+        orbAnims.push({obj:obj,t:0});
+      }
+    }
+  }
+
+  if(gMode==='cube' && player.onGround){
+      if(player.onSlope){
+        const slopeTarget = -70;
+        let cur = ((player.rot % 360) + 360) % 360;
+        if(cur > 180) cur -= 360;
+        player.rot = cur;
+        const diff = slopeTarget - player.rot;
+        player.rot += diff * Math.min(1, 14 * dt);
+      } else {
+        const snapped = Math.round(player.rot / 90) * 90;
+        const diff = snapped - player.rot;
+        player.rot += diff * Math.min(1, 18 * dt);
+        if(Math.abs(diff) < 0.5) player.rot = snapped;
+      }
+      if(jHeld||jumpBuf>0){ 
+          player.vy=JUMP_V; 
+          player.onGround=false; 
+          jumpBuf=0; 
+          player.y += player.vy * dt; 
+      }
+  }
+
+  if(player.wasOnSlope && !player.onSlope && !player.onGround && gMode==='cube'){
+    player.vy = Math.min(player.vy, JUMP_V * 0.38);
+  }
+  if(player.onGround && !player.onSlope) player.wasOnSlope = false;
+  player.wasOnSlope = player.onSlope;
+  if(player.x>=lvEnd){ won=true;show('win-screen','flex');$('win-screen').onclick=exitGame; }
+  const pct=Math.min(100,Math.max(0,(player.x/lvEnd)*100));
+  $('prog-bar').style.width=pct+'%'; $('g-pct').textContent=Math.floor(pct)+'%';
+}
+
+function die(){
+  if(dead)return; dead=true; jHeld=false; jPrev=false; jumpBuf=0;
+  attempts++; 
+
+  if(isMultiplayer) {
+      channel.postMessage({ type: 'playerDeath', id: myPlayerId, x: player.x, y: player.y });
+  }
+  
+  if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+  }
+
+  deathParticles =[]; deathWave = 0;
+  for(let i=0; i<4; i++){
+      for(let j=0; j<4; j++){
+          deathParticles.push({
+              x: player.x - TILE/2 + (i*TILE/4) + TILE/8,
+              y: player.y - TILE/2 + (j*TILE/4) + TILE/8,
+              vx: (Math.random() - 0.5) * 600,
+              vy: (Math.random() - 1.2) * 800,
+              rot: Math.random() * 360,
+              rotV: (Math.random() - 0.5) * 800,
+              size: TILE/4 * (0.6 + Math.random()*0.5)
+          });
+      }
+  }
+  respawnTimer = 1.0;
+  updateAttemptsDisplay(); 
+}
+
+function drawG(){
+  const W=gC.width, H=gC.height;
+  gCtx2.clearRect(0,0,W,H);
+  let curHexCol = rgbToHex(gBgCol[0], gBgCol[1], gBgCol[2]);
+  
+  drawBg(gCtx2, W, H, gCamX, gCamY, curHexCol, gBgOpac); 
+
+  gCtx2.save();
+  gCtx2.scale(gZoom, gZoom);
+  
+  const logicalW = W / gZoom;
+  const logicalH = H / gZoom;
+
+  const rawT = shipTransDir===1 ? 1 - (shipTransAnim / TRANS_DUR) : (shipTransAnim / TRANS_DUR);
+  const transT = Math.min(1, Math.max(0, rawT));
+  const eased = transT < 0.5 ? 2*transT*transT : 1-Math.pow(-2*transT+2,2)/2;
+
+  const finalFloorY = sY(GROUND_Y);   
+  const finalCeilY  = sY(CEIL_Y);     
+
+  const startCeilY = -GROUND_TS;
+  const animCeilY  = startCeilY + (finalCeilY - startCeilY) * eased;
+  const animFloorY = finalFloorY; 
+
+  gCtx2.fillStyle='#000'; gCtx2.fillRect(0, animFloorY, logicalW, logicalH);
+  if(ok(IM.ground)){
+    const off=-(gCamX%GROUND_TS)-GROUND_TS;
+    for(let tx=off;tx<logicalW+GROUND_TS;tx+=GROUND_TS)
+      gCtx2.drawImage(IM.ground, tx, animFloorY, GROUND_TS, GROUND_TS);
+    // Ground color tint overlay
+    gCtx2.globalCompositeOperation='multiply';
+    gCtx2.fillStyle=rgbToHex(Math.round(gGndCol[0]),Math.round(gGndCol[1]),Math.round(gGndCol[2]));
+    gCtx2.fillRect(0, animFloorY, logicalW, logicalH);
+    gCtx2.globalCompositeOperation='source-over';
+  } else {
+    gCtx2.fillStyle=rgbToHex(Math.round(gGndCol[0]),Math.round(gGndCol[1]),Math.round(gGndCol[2]));
+    gCtx2.fillRect(0, animFloorY, logicalW, GROUND_TS);
+  }
+
+  if(gMode==='ship' || gMode==='wave' || shipTransAnim > 0){
+    if(ok(IM.ground)){
+      const off=-(gCamX%GROUND_TS)-GROUND_TS;
+      gCtx2.save();
+      gCtx2.scale(1, -1);
+      for(let tx=off;tx<logicalW+GROUND_TS;tx+=GROUND_TS)
+        gCtx2.drawImage(IM.ground, tx, -animCeilY, GROUND_TS, GROUND_TS);
+      gCtx2.restore();
+      gCtx2.globalCompositeOperation='multiply';
+      gCtx2.fillStyle=rgbToHex(Math.round(gGndCol[0]),Math.round(gGndCol[1]),Math.round(gGndCol[2]));
+      gCtx2.fillRect(0, 0, logicalW, animCeilY);
+      gCtx2.globalCompositeOperation='source-over';
+    } else {
+      gCtx2.fillStyle=rgbToHex(Math.round(gGndCol[0]),Math.round(gGndCol[1]),Math.round(gGndCol[2]));
+      gCtx2.fillRect(0, animCeilY - GROUND_TS, logicalW, GROUND_TS);
+    }
+    gCtx2.fillStyle='#000'; gCtx2.fillRect(0, 0, logicalW, animCeilY - GROUND_TS);
+  }
+
+  curLv.objs.forEach(obj=>{
+    const t=td(obj.typeId),sc=obj.scale||1;
+    if (t.kind === 'start_pos') return;
+
+    const pos = getObjPos(obj);
+    const alpha = getObjAlpha(obj);
+    if(alpha <= 0) return; // Invisible
+
+    const sx=sX(pos.x),sy=sY(pos.y); 
+    if(sx<-TILE*4||sx>logicalW+TILE*4)return;
+    const rot=(obj.rot||0)*Math.PI/180;
+    let sw=t.w*TILE*sc, sh=t.h*TILE*sc;
+    gCtx2.save();
+    gCtx2.globalAlpha *= alpha;
+    gCtx2.translate(sx,sy);
+    if (t.kind === 'saw') gCtx2.rotate(rot + performance.now() / -250); // Spin smoothly
+    else gCtx2.rotate(rot);
+
+    const img=IM[t.img];
+
+    let drawSw = sw, drawSh = sh;
+    let isOrb = (t.kind === 'orb');
+    let drawGlow = false;
+    let glowAlpha = 0;
+
+    if (isOrb) {
+        let currentPulse = musicPulse;
+        const anim = orbAnims.find(a => a.obj === obj);
+        
+        if (anim) {
+            let tAnim = anim.t;
+            let clickScale = 1.0;
+            
+            if (tAnim <= 0.12) {
+                clickScale = 1.0 + (tAnim / 0.12) * 0.6; glowAlpha = 1.0;
+            } 
+            else if (tAnim <= 0.21) {
+                clickScale = 1.6 - ((tAnim - 0.12) / 0.09) * 0.6; glowAlpha = 1.0;
+            } 
+            else if (tAnim <= 0.31) {
+                clickScale = 1.0; glowAlpha = 1.0 - ((tAnim - 0.21) / 0.1);
+            }
+            drawSw *= clickScale; drawSh *= clickScale;
+            if (glowAlpha > 0) drawGlow = true;
+        } else {
+            drawSw *= currentPulse; drawSh *= currentPulse;
+        }
+    }
+
+    if(t.kind !== 'trigger' || hbx2) {
+      if(ok(img)){
+        if (drawGlow) { gCtx2.shadowColor = '#FFD700'; gCtx2.shadowBlur = 30 * glowAlpha; }
+        if(t.isDeco && obj.color){
+          const tinted = getTinted(img, obj.color, Math.ceil(sw), Math.ceil(sh));
+          gCtx2.drawImage(tinted, -drawSw/2, -drawSh/2, drawSw, drawSh);
+        } else { gCtx2.drawImage(img,-drawSw/2,-drawSh/2,drawSw,drawSh); }
+        if (drawGlow) gCtx2.shadowBlur = 0;
+      }
+      else{gCtx2.fillStyle='#555';gCtx2.fillRect(-drawSw/2,-drawSh/2,drawSw,drawSh);}
+    }
+    
+    if(t.kind==='orb'){
+      const anim=orbAnims.find(a=>a.obj === obj);
+      if(anim && anim.t <= 0.28){
+        let ringP = anim.t / 0.28;
+        const ringScale = 1 + ringP * 1.0; 
+        gCtx2.globalAlpha *= (1 - ringP) * 0.8; 
+        gCtx2.save(); gCtx2.scale(ringScale, ringScale);
+        gCtx2.strokeStyle = '#FFD700'; gCtx2.lineWidth = 4;
+        gCtx2.beginPath(); gCtx2.arc(0,0,sw*0.55,0,Math.PI*2); gCtx2.stroke();
+        gCtx2.restore();
+      }
+    }
+    if(hbx2){
+      if(t.kind==='block'&&t.solid){ gCtx2.strokeStyle='rgba(60,80,255,.9)'; gCtx2.lineWidth=2; gCtx2.strokeRect(-sw/2,-sh/2,sw,sh); }
+      else if(t.kind==='spike'){ 
+        gCtx2.strokeStyle='rgba(255,80,80,.9)'; gCtx2.lineWidth=2; 
+        const sHW_visual=(sw/2)*0.40, sHH_visual=(sh/2)*0.60;
+        const spikeCenterY_visual = (sh/2) - sHH_visual;
+        gCtx2.strokeRect(-sHW_visual, spikeCenterY_visual - sHH_visual, sHW_visual*2, sHH_visual*2); 
+      }
+      else if(t.kind==='slope'){
+        gCtx2.strokeStyle='rgba(60,80,255,.9)'; gCtx2.lineWidth=2; gCtx2.beginPath();
+        gCtx2.moveTo(-sw/2,  sh/2); gCtx2.lineTo( sw/2,  sh/2); gCtx2.lineTo( sw/2, -sh/2);
+        gCtx2.closePath(); gCtx2.stroke();
+      }
+      else if(t.kind==='saw'){
+        gCtx2.strokeStyle='rgba(255,80,80,.9)'; gCtx2.lineWidth=2; gCtx2.beginPath();
+        gCtx2.arc(0, 0, 0.75 * TILE * sc, 0, Math.PI*2); gCtx2.stroke();
+      }
+      else if(t.kind==='trigger' || t.kind==='pcube' || t.kind==='pship' || t.kind==='pwave'){ gCtx2.strokeStyle='rgba(100,255,100,.9)'; gCtx2.lineWidth=2; gCtx2.strokeRect(-sw/2,-sh/2,sw,sh); }
+    }
+    gCtx2.restore();
+  });
+
+  const px=sX(player.x),py=sY(player.y); 
+
+  if (!dead && pWaveTrail.length > 1) {
+      gCtx2.save(); gCtx2.beginPath();
+      gCtx2.strokeStyle = 'rgba(0, 255, 0, 1)'; 
+      gCtx2.lineWidth = TILE * 0.25;
+      gCtx2.lineCap = 'round'; gCtx2.lineJoin = 'round';
+      for (let i = 0; i < pWaveTrail.length; i++) {
+          const pt = pWaveTrail[i];
+          if (i === 0) gCtx2.moveTo(sX(pt.x), sY(pt.y)); else gCtx2.lineTo(sX(pt.x), sY(pt.y));
+      }
+      gCtx2.stroke(); gCtx2.restore();
+  }
+
+  // DRAW OTHER PLAYERS
+  if (isMultiplayer) {
+    for (const p of otherPlayers.values()) {
+        const ppx = sX(p.x), ppy = sY(p.y);
+        gCtx2.save(); gCtx2.globalAlpha = 0.6;
+        gCtx2.translate(ppx,ppy); gCtx2.rotate(p.rot*Math.PI/180);
+        const iconImg = IM[p.gMode];
+        if(ok(iconImg)) {
+            if(p.gMode === 'ship') {
+                const ci=IM.cube, si=IM.ship;
+                if(ok(si)) gCtx2.drawImage(si, -TILE*0.8, -TILE*0.4, TILE*1.6, TILE*0.8);
+                if(ok(ci)) gCtx2.drawImage(ci, -TILE*0.3, -TILE*0.56, TILE*0.45, TILE*0.45);
+            } else if (p.gMode === 'wave') {
+                gCtx2.drawImage(iconImg, -TILE*0.5, -TILE*0.45, TILE*1.0, TILE*0.9);
+            } else {
+                gCtx2.drawImage(iconImg,-TILE/2,-TILE/2,TILE,TILE);
+            }
+        }
+        gCtx2.restore();
+        // Draw their wave trail
+        if(p.waveTrail && p.waveTrail.length > 1) {
+            gCtx2.save(); gCtx2.globalAlpha = 0.6; gCtx2.beginPath();
+            gCtx2.strokeStyle = 'rgba(0, 255, 0, 0.6)'; gCtx2.lineWidth = TILE * 0.25;
+            gCtx2.lineCap = 'round'; gCtx2.lineJoin = 'round';
+            for (let i = 0; i < p.waveTrail.length; i++) {
+                const pt = p.waveTrail[i];
+                if (i === 0) gCtx2.moveTo(sX(pt.x), sY(pt.y)); else gCtx2.lineTo(sX(pt.x), sY(pt.y));
+            }
+            gCtx2.stroke(); gCtx2.restore();
+        }
+        // Draw Name
+        gCtx2.fillStyle = '#fff'; gCtx2.font = 'bold 16px Arial'; gCtx2.textAlign = 'center';
+        gCtx2.shadowColor = '#000'; gCtx2.shadowBlur = 4;
+        gCtx2.fillText(p.name, ppx, ppy - TILE * 0.7);
+        gCtx2.shadowBlur = 0;
+    }
+    otherDeathFX.forEach(fx => {
+        const fpx=sX(fx.x), fpy=sY(fx.y);
+        gCtx2.save(); gCtx2.globalAlpha = Math.max(0, 0.6 * (1 - fx.wave/300));
+        gCtx2.beginPath(); gCtx2.arc(fpx, fpy, fx.wave, 0, Math.PI*2);
+        gCtx2.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - fx.wave/300)})`;
+        gCtx2.lineWidth = 5; gCtx2.stroke();
+        fx.particles.forEach(p => {
+            gCtx2.save(); gCtx2.translate(sX(p.x), sY(p.y)); gCtx2.rotate(p.rot * Math.PI/180); 
+            gCtx2.fillStyle = '#00f6ff'; gCtx2.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+            gCtx2.restore();
+        });
+        gCtx2.restore();
+    });
+  }
+
+  // DRAW LOCAL PLAYER
+  if (!dead) {
+      gCtx2.save(); gCtx2.translate(px,py); gCtx2.rotate(player.rot*Math.PI/180);
+      if(gMode==='ship'){
+        const ci=IM.cube, si=IM.ship;
+        if(ok(si)) gCtx2.drawImage(si, -TILE*0.8, -TILE*0.4, TILE*1.6, TILE*0.8);
+        else {gCtx2.fillStyle='rgba(255,140,0,.85)';gCtx2.fillRect(-TILE*0.8,-TILE*0.4,TILE*1.6,TILE*0.8);}
+        if(ok(ci)) gCtx2.drawImage(ci, -TILE*0.3, -TILE*0.56, TILE*0.45, TILE*0.45);
+        else {gCtx2.fillStyle='#7DF';gCtx2.fillRect(-TILE*0.3,-TILE*0.56,TILE*0.45,TILE*0.45);}
+      } else if (gMode==='wave'){
+        const wi=IM.wave;
+        if(ok(wi)) gCtx2.drawImage(wi, -TILE*0.5, -TILE*0.45, TILE*1.0, TILE*0.9);
+        else {gCtx2.fillStyle='#7DF';gCtx2.fillRect(-TILE*0.4,-TILE*0.4,TILE*0.8,TILE*0.8);}
+      } else {
+        const ci=IM.cube; if(ok(ci))gCtx2.drawImage(ci,-TILE/2,-TILE/2,TILE,TILE);
+        else{gCtx2.fillStyle='#7DF';gCtx2.fillRect(-TILE/2,-TILE/2,TILE,TILE);}
+      }
+      if(hbx2){ gCtx2.strokeStyle='rgba(139,0,0,.95)'; gCtx2.lineWidth=2; gCtx2.strokeRect(-TILE/2,-TILE/2,TILE,TILE); }
+      gCtx2.restore();
+      if(hbx2){
+        gCtx2.save(); gCtx2.translate(px,py);
+        let hbRed = TILE, hbBlue = TILE * 0.30;
+        if(gMode==='wave'){ hbRed = TILE*0.6; hbBlue = TILE*0.3; }
+        gCtx2.strokeStyle='rgba(255,100,100,.9)'; gCtx2.lineWidth=2; gCtx2.strokeRect(-hbRed/2, -hbRed/2, hbRed, hbRed);
+        gCtx2.strokeStyle='rgba(60,60,255,.9)'; gCtx2.strokeRect(-hbBlue/2, -hbBlue/2, hbBlue, hbBlue);
+        gCtx2.restore();
+      }
+  } else {
+      gCtx2.beginPath(); gCtx2.arc(px, py, deathWave, 0, Math.PI*2);
+      gCtx2.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - deathWave/300)})`;
+      gCtx2.lineWidth = 5; gCtx2.stroke();
+      deathParticles.forEach(p => {
+          gCtx2.save(); gCtx2.translate(sX(p.x), sY(p.y)); gCtx2.rotate(p.rot * Math.PI/180); 
+          gCtx2.fillStyle = '#00f6ff'; gCtx2.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+          gCtx2.strokeStyle = '#000'; gCtx2.lineWidth = 2; gCtx2.strokeRect(-p.size/2, -p.size/2, p.size, p.size);
+          gCtx2.restore();
+      });
+  }
+  
+  gCtx2.restore(); 
+}
+
+window.addEventListener('load', () => {
+    const {levels, music} = getLS();
+    currentMusic = music;
+    const musicSelect = $('music-select');
+    if (musicSelect) {
+        musicSelect.value = currentMusic;
+        setMusic(currentMusic); 
+    }
+    showMenu();
+});
+</script>
+</body>
+</html>
